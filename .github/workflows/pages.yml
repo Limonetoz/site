@@ -19,41 +19,10 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
-      pages: write
+      pages: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      # Impede que o deploy automático da branch contorne os testes.
-      - name: Garantir publicação exclusiva pelo Actions
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPOSITORY: ${{ github.repository }}
-          API_URL: ${{ github.api_url }}
-        run: |
-          python3 - <<'PY'
-          import json
-          import os
-          from urllib.request import Request, urlopen
-
-          endpoint = f"{os.environ['API_URL']}/repos/{os.environ['REPOSITORY']}/pages"
-          headers = {
-              'Authorization': f"Bearer {os.environ['GH_TOKEN']}",
-              'Accept': 'application/vnd.github+json',
-              'X-GitHub-Api-Version': '2022-11-28',
-          }
-          def read_pages():
-              with urlopen(Request(endpoint, headers=headers)) as response:
-                  return json.load(response)
-
-          if read_pages()['build_type'] != 'workflow':
-              request = Request(endpoint, method='PUT', headers=headers,
-                                data=json.dumps({'build_type': 'workflow'}).encode())
-              with urlopen(request) as response:
-                  response.read()
-          assert read_pages()['build_type'] == 'workflow', 'Pages ainda publica pela branch'
-          print('PASS: GitHub Pages usa exclusivamente GitHub Actions')
-          PY
 
       - name: Configurar Pages
         id: pages
@@ -75,9 +44,50 @@ jobs:
         with:
           path: ./_site
 
+  pages_source:
+    name: Validar origem de publicação
+    needs: build_test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pages: read
+    steps:
+      # Uma publicação direta da branch não respeita os testes deste workflow.
+      - name: Exigir GitHub Actions como origem do Pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          API_URL: ${{ github.api_url }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+          from urllib.error import HTTPError
+          from urllib.request import Request, urlopen
+
+          endpoint = f"{os.environ['API_URL']}/repos/{os.environ['REPOSITORY']}/pages"
+          headers = {
+              'Authorization': f"Bearer {os.environ['GH_TOKEN']}",
+              'Accept': 'application/vnd.github+json',
+              'X-GitHub-Api-Version': '2022-11-28',
+          }
+          try:
+              with urlopen(Request(endpoint, headers=headers)) as response:
+                  pages = json.load(response)
+          except HTTPError as error:
+              print(f'::error::Não foi possível consultar Pages: HTTP {error.code}')
+              sys.exit(1)
+          if pages['build_type'] != 'workflow':
+              print('::error::Selecione GitHub Actions em Settings > Pages > Source. '
+                    'A publicação direta da branch não respeita os testes.')
+              sys.exit(1)
+          print('PASS: GitHub Pages usa exclusivamente GitHub Actions')
+          PY
+
   deploy:
     name: Publicar após os testes
-    needs: build_test
+    needs: [build_test, pages_source]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

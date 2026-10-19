@@ -30,16 +30,17 @@ A pasta `tests/` é excluída do site publicado por `_config.yml`.
 O workflow `.github/workflows/pages.yml` roda em cada push para `main`
 e também pode ser iniciado manualmente na aba Actions.
 
-1. Confirma que o Pages usa GitHub Actions, em vez do deploy direto da branch.
-2. Compila o site com a ação oficial do Jekyll para GitHub Pages.
-3. Serve o resultado em HTTP e executa os testes no prefixo de produção.
-4. Envia o artefato somente se os testes passarem.
-5. Publica esse mesmo artefato em um job com `needs: build_test`.
+1. Compila o site com a ação oficial do Jekyll para GitHub Pages.
+2. Serve o resultado em HTTP e executa os testes no prefixo de produção.
+3. Envia o artefato somente se os testes passarem.
+4. Confirma que o Pages usa GitHub Actions, em vez do deploy direto da branch.
+5. Publica esse mesmo artefato em um job com `needs: [build_test, pages_source]`.
 
-Se build ou testes falharem, o job de deploy não executa. O workflow precisa
-ter permissão `pages: write` para configurar a origem de publicação. Se a
-política do repositório impedir essa alteração, selecione **GitHub Actions**
-em **Settings → Pages → Build and deployment → Source**.
+Se build, testes ou validação da origem falharem, o job de deploy não executa.
+A origem precisa ser selecionada uma vez, manualmente: **Settings → Pages →
+Build and deployment → Source → GitHub Actions**. O workflow não altera essa
+configuração administrativa. Enquanto a origem continuar sendo a branch,
+o deploy automático antigo pode publicar sem respeitar estes testes.
 
 Para testar um build local sem iniciar um servidor manualmente:
 
