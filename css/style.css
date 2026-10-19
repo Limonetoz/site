@@ -1,40 +1,9 @@
 /* ==================================================
-   FONTES LOCAIS
-
-   Nenhuma fonte externa ou CDN é acessada.
-================================================== */
-
-@font-face {
-  font-family: "JetBrainsMono Nerd Font";
-  src: url("../fonts/JetBrainsMonoNerdFont-Regular.woff2")
-    format("woff2");
-  font-display: swap;
-  font-style: normal;
-  font-weight: 400;
-}
-
-@font-face {
-  font-family: "JetBrainsMono Nerd Font";
-  src: url("../fonts/JetBrainsMonoNerdFont-Bold.woff2")
-    format("woff2");
-  font-display: swap;
-  font-style: normal;
-  font-weight: 700;
-}
-
-/* ==================================================
    VARIÁVEIS
 ================================================== */
 
 :root {
-  --font:
-    "JetBrainsMono Nerd Font",
-    "JetBrainsMono Nerd Font Mono",
-    "FiraCode Nerd Font",
-    "Hack Nerd Font",
-    "Cascadia Code",
-    "Courier New",
-    monospace;
+  --font: monospace;
 
   --black: #050505;
   --black-soft: #090909;
