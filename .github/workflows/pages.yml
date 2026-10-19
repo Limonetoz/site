@@ -1,0 +1,92 @@
+name: Testar e publicar Jekyll
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build_test:
+    name: Build e testes HTTP
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Impede que o deploy automático da branch contorne os testes.
+      - name: Garantir publicação exclusiva pelo Actions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          API_URL: ${{ github.api_url }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from urllib.request import Request, urlopen
+
+          endpoint = f"{os.environ['API_URL']}/repos/{os.environ['REPOSITORY']}/pages"
+          headers = {
+              'Authorization': f"Bearer {os.environ['GH_TOKEN']}",
+              'Accept': 'application/vnd.github+json',
+              'X-GitHub-Api-Version': '2022-11-28',
+          }
+          def read_pages():
+              with urlopen(Request(endpoint, headers=headers)) as response:
+                  return json.load(response)
+
+          if read_pages()['build_type'] != 'workflow':
+              request = Request(endpoint, method='PUT', headers=headers,
+                                data=json.dumps({'build_type': 'workflow'}).encode())
+              with urlopen(request) as response:
+                  response.read()
+          assert read_pages()['build_type'] == 'workflow', 'Pages ainda publica pela branch'
+          print('PASS: GitHub Pages usa exclusivamente GitHub Actions')
+          PY
+
+      - name: Configurar Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Compilar Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+
+      - name: Testar site compilado por HTTP
+        env:
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+        run: python3 tests/integration/test_built_site.py _site --base-path "$BASE_PATH"
+
+      - name: Enviar somente o artefato aprovado
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./_site
+
+  deploy:
+    name: Publicar após os testes
+    needs: build_test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publicar artefato aprovado
+        id: deployment
+        uses: actions/deploy-pages@v5
