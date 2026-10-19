@@ -760,7 +760,7 @@ img {
 }
 
 /* ==================================================
-   ACESSIBILIDADE
+   RESPONSIVIDADE E ACESSIBILIDADE
 ================================================== */
 
 :focus-visible {
@@ -768,151 +768,88 @@ img {
   outline-offset: 5px;
 }
 
-/* ==================================================
-   TABLETS
-================================================== */
-
 @media (max-width: 900px) {
-  .hero {
-    grid-template-columns: 1fr;
-    gap: 60px;
-  }
-
-  .profile-area {
-    min-height: 430px;
-  }
-
-  .hero-content {
-    max-width: 750px;
-  }
-
-  .post {
-    grid-template-columns: 55px 1fr;
-  }
-
-  .post-meta {
-    grid-column: 2;
-    text-align: left;
-  }
-
-  .post-meta time {
-    display: inline;
-    margin-right: 20px;
-  }
-
-  .about {
-    grid-template-columns: 1fr;
-    gap: 45px;
-    padding: 50px;
-  }
-}
-
-/* ==================================================
-   CELULARES
-================================================== */
-
-@media (max-width: 650px) {
   .container {
-    width: min(100% - 28px, 1120px);
-  }
-
-  .header-container {
-    min-height: 66px;
-  }
-
-  .logo-name {
-    display: none;
-  }
-
-  .navigation ul {
-    gap: 14px;
-  }
-
-  .navigation a {
-    font-size: 0.55rem;
-  }
-
-  .navigation a::before {
-    display: none;
+    width: min(100% - 40px, 720px);
   }
 
   .hero {
     min-height: auto;
-    padding-block: 70px 60px;
-  }
-
-  .profile-area {
-    order: 1;
-  }
-
-  .hero-content {
-    order: 2;
-  }
-
-  .hero h1 {
-    font-size: clamp(3.2rem, 18vw, 5.5rem);
-  }
-
-  .profile-frame {
-    width: 300px;
-  }
-
-  .section {
+    grid-template-columns: 1fr;
+    gap: 56px;
     padding-block: 80px;
   }
 
-  .section-heading {
-    align-items: flex-start;
-    flex-direction: column;
+  .profile-area {
+    min-height: 380px;
   }
 
-  .post {
-    min-height: auto;
-    padding-block: 28px;
-    grid-template-columns: 1fr;
-    gap: 20px;
+  .content {
+    max-width: 680px;
   }
 
-  .post:hover {
-    padding-inline: 10px;
-  }
-
-  .post-meta {
-    grid-column: auto;
-  }
-
-  .commit-panel {
-    padding: 25px 20px;
-  }
-
-  .commit-header,
-  .commit-footer {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .about {
-    padding: 34px 24px;
-  }
-
-  .contact-panel {
-    padding: 45px 24px;
-  }
-
-  .contact-links {
-    flex-direction: column;
-  }
-
-  .footer-container {
-    padding-block: 28px;
-    align-items: flex-start;
-    flex-direction: column;
+  .description {
+    max-width: 600px;
   }
 }
 
-/* ==================================================
-   MOVIMENTO REDUZIDO
-================================================== */
+@media (max-width: 650px) {
+  .container {
+    width: min(100% - 28px, 520px);
+  }
+
+  .header-container {
+    min-height: 64px;
+  }
+
+  .logo-name {
+    font-size: 0.68rem;
+  }
+
+  .hero {
+    gap: 36px;
+    padding-block: 56px 64px;
+  }
+
+  .profile-area {
+    min-height: 310px;
+  }
+
+  .profile-frame {
+    width: min(78vw, 290px);
+  }
+
+  .profile-card {
+    width: min(260px, 86vw);
+  }
+
+  .profile-image {
+    height: 210px;
+  }
+
+  .system-label {
+    margin-bottom: 18px;
+    font-size: 0.6rem;
+  }
+
+  .description {
+    margin-bottom: 0;
+    font-size: 0.78rem;
+    line-height: 1.75;
+  }
+
+  .footer-container {
+    min-height: 0;
+    padding-block: 24px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .footer-links {
+    gap: 16px;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *,
