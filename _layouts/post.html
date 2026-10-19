@@ -2,18 +2,18 @@
 layout: default
 ---
 
-<main class="post-page container">
+<main class="post-page container" id="conteudo">
   <a class="post-back" href="{{ '/' | relative_url }}#posts">← Voltar aos posts</a>
 
   <article class="post-entry">
     <header class="post-entry-header">
       {% if page.categories and page.categories != empty %}
-        <span class="post-category">{{ page.categories | join: " // " }}</span>
+        <span class="post-category">{{ page.categories | join: " // " | escape }}</span>
       {% else %}
         <span class="post-category">Post</span>
       {% endif %}
 
-      <h1>{{ page.title }}</h1>
+      <h1>{{ page.title | escape }}</h1>
 
       <time datetime="{{ page.date | date_to_xmlschema }}">
         {{ page.date | date: "%d.%m.%Y" }}

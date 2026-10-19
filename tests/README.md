@@ -2,12 +2,18 @@
 
 `integration/verify_jekyll_http.py` verifica o site gerado via HTTP:
 
-- página inicial sem Liquid ou front matter expostos;
-- publicação `2026-10-19-mudanca` listada e acessível;
-- layout e conteúdo do post renderizados;
-- CSS e imagem respondendo com HTTP 200.
+- páginas sem Liquid ou front matter expostos;
+- links internos descobertos automaticamente a partir da página inicial;
+- arquivos vinculados respondendo com HTTP 200, sem redirecionamentos;
+- links respeitando o prefixo do site e âncoras existentes;
+- exatamente um `h1` e um `main` por página;
+- imagens com atributo `alt` e folha de estilos presente;
+- link do repositório e proteção `noopener` em links que abrem nova aba.
 
-Esse teste usa o post existente como referência; ajuste as expectativas se ele for removido ou renomeado. Não cria nem apaga publicações.
+O teste não depende do título, da data ou do nome de um post específico.
+Não cria nem apaga publicações. Links externos não são consultados, evitando
+falhas de rede de terceiros no deploy. Ele verifica a estrutura do HTML,
+mas não substitui a revisão visual de responsividade e contraste.
 
 Na raiz do projeto, inicie o servidor:
 
@@ -46,7 +52,7 @@ Para testar um build local sem iniciar um servidor manualmente:
 
 ```sh
 nix-shell --run 'jekyll build --baseurl /site'
-python3 tests/integration/test_built_site.py _site --base-path /site
+nix-shell --run 'python3 tests/integration/test_built_site.py _site --base-path /site'
 ```
 
 O servidor usa uma porta livre, é encerrado ao final e o processo retorna

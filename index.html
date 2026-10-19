@@ -4,10 +4,8 @@ home: true
 description: Blog pessoal sobre estudos, tecnologia e projetos.
 ---
 
-<main>
-  <!-- Apresentação -->
+<main id="conteudo">
   <section class="intro container" id="inicio">
-    <!-- Perfil à esquerda -->
     <div class="profile-area">
       <div class="profile-frame" aria-hidden="true"></div>
 
@@ -16,25 +14,25 @@ description: Blog pessoal sobre estudos, tecnologia e projetos.
           <img
             src="{{ '/assets/images/icon.svg' | relative_url }}"
             alt="Mascote do 4LagDev: invasor verde-limão de óculos redondos"
+            width="512"
+            height="512"
           >
         </div>
 
         <div class="profile-info">
-          <h2>4LagDev</h2>
+          <h1>4LagDev</h1>
           <p>Desenvolvedor</p>
         </div>
       </article>
     </div>
 
-    <!-- Conteúdo à direita -->
     <div class="content">
       <p class="system-label">
         Um arquivo pessoal sobre estudos e artigos
       </p>
 
       <p class="description">
-        Um historico do que ando trabalhando.
-
+        Um histórico do que ando trabalhando.
       </p>
 
       <div class="actions">
@@ -45,7 +43,6 @@ description: Blog pessoal sobre estudos, tecnologia e projetos.
 
     </div>
   </section>
-  <!-- Posts gerados automaticamente pelo Jekyll -->
   <section class="section container" id="posts">
     <header class="section-heading">
       <div>
@@ -53,7 +50,7 @@ description: Blog pessoal sobre estudos, tecnologia e projetos.
         <h2>Posts</h2>
       </div>
 
-      <p>Publicaçoes recentes.</p>
+      <p>Publicações recentes.</p>
     </header>
 
     <div class="posts-list">
@@ -65,17 +62,17 @@ description: Blog pessoal sobre estudos, tecnologia e projetos.
             <div class="post-content">
               <span class="post-category">
                 {% if post.categories and post.categories != empty %}
-                  {{ post.categories | join: " // " }}
+                  {{ post.categories | join: " // " | escape }}
                 {% else %}
                   Post
                 {% endif %}
               </span>
 
               <h3>
-                <a href="{{ post.url | relative_url }}">{{ post.title }}</a>
+                <a href="{{ post.url | relative_url }}">{{ post.title | escape }}</a>
               </h3>
 
-              <p>{{ post.excerpt | strip_html | strip_newlines | truncate: 160 }}</p>
+              <p>{{ post.excerpt | strip_html | strip_newlines | truncate: 160 | escape }}</p>
             </div>
 
             <div class="post-meta">

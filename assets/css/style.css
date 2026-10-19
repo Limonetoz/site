@@ -1,6 +1,4 @@
-/* ==================================================
-   VARIÁVEIS
-================================================== */
+/* Variáveis */
 
 :root {
   --font: monospace;
@@ -8,17 +6,14 @@
   --black: #050505;
   --black-soft: #090909;
   --black-light: #101010;
-  --graphite: #171717;
   --border: #242424;
   --border-hover: #494949;
   --white: #e8e8e8;
   --gray: #969696;
-  --gray-dark: #606060;
+  --gray-dark: #8a8a8a;
 }
 
-/* ==================================================
-   RESET
-================================================== */
+/* Reset */
 
 * {
   box-sizing: border-box;
@@ -79,9 +74,7 @@ img {
   margin-inline: auto;
 }
 
-/* ==================================================
-   FUNDO
-================================================== */
+/* Fundo */
 
 .background {
   position: fixed;
@@ -194,9 +187,7 @@ img {
   }
 }
 
-/* ==================================================
-   CABEÇALHO
-================================================== */
+/* Cabeçalho */
 
 .header {
   position: sticky;
@@ -257,9 +248,7 @@ img {
   color: var(--white);
 }
 
-/* ==================================================
-   INTRODUÇÃO
-================================================== */
+/* Introdução */
 
 .intro {
   min-height: calc(100vh - 72px);
@@ -304,9 +293,7 @@ img {
   gap: 12px;
 }
 
-/* ==================================================
-   BOTÕES
-================================================== */
+/* Botões */
 
 .button {
   min-height: 46px;
@@ -350,9 +337,7 @@ img {
   background: #ffffff;
 }
 
-/* ==================================================
-   PERFIL
-================================================== */
+/* Perfil */
 
 .profile-area {
   position: relative;
@@ -442,7 +427,7 @@ img {
   padding: 20px 14px 14px;
 }
 
-.profile-info h2 {
+.profile-info h1 {
   font-size: 0.95rem;
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -454,9 +439,7 @@ img {
   font-size: 0.66rem;
 }
 
-/* ==================================================
-   SEÇÕES
-================================================== */
+/* Seções */
 
 .section {
   padding-block: 110px;
@@ -494,9 +477,7 @@ img {
   font-size: 0.76rem;
 }
 
-/* ==================================================
-   POSTS
-================================================== */
+/* Posts */
 
 .posts-list {
   border-top: 1px solid var(--border);
@@ -516,7 +497,7 @@ img {
   min-height: 190px;
   padding-block: 32px;
   display: grid;
-  grid-template-columns: 70px 1fr auto;
+  grid-template-columns: 70px minmax(0, 1fr) auto;
   align-items: center;
   gap: 34px;
   border-bottom: 1px solid var(--border);
@@ -554,6 +535,7 @@ img {
   margin-bottom: 10px;
   font-size: clamp(1rem, 2vw, 1.35rem);
   font-weight: 500;
+  overflow-wrap: anywhere;
 }
 
 .post p {
@@ -595,9 +577,7 @@ img {
   transform: translateX(4px);
 }
 
-/* ==================================================
-   RODAPÉ
-================================================== */
+/* Rodapé */
 
 .footer {
   border-top: 1px solid var(--border);
@@ -629,9 +609,28 @@ img {
   color: var(--white);
 }
 
-/* ==================================================
-   RESPONSIVIDADE E ACESSIBILIDADE
-================================================== */
+/* Responsividade e acessibilidade */
+
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  padding: 12px 16px;
+  color: var(--black);
+  background: var(--white);
+  transform: translateY(-200%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.profile-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
 
 :focus-visible {
   outline: 1px solid var(--white);
@@ -703,7 +702,7 @@ img {
   }
 
   .description {
-    margin-bottom: 0;
+    margin-bottom: 24px;
     font-size: 0.78rem;
     line-height: 1.75;
   }
@@ -719,6 +718,26 @@ img {
   .footer-links {
     gap: 16px;
   }
+
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .post {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .post-meta {
+    min-width: 0;
+    text-align: left;
+  }
+
+  .post-symbol {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -732,9 +751,7 @@ img {
   }
 }
 
-/* ==================================================
-   PÁGINA DO POST
-================================================== */
+/* Página do post */
 
 .post-page {
   min-height: calc(100vh - 172px);
@@ -783,6 +800,7 @@ img {
 
 .post-entry-content {
   padding-top: 42px;
+  overflow-wrap: anywhere;
   color: var(--gray);
   font-size: 0.92rem;
   line-height: 1.9;
@@ -805,6 +823,10 @@ img {
 .post-entry-content ul,
 .post-entry-content ol {
   padding-left: 24px;
+}
+
+.post-entry-content ul {
+  list-style: disc;
 }
 
 .post-entry-content li {

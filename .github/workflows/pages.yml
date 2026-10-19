@@ -73,7 +73,7 @@ jobs:
               'X-GitHub-Api-Version': '2022-11-28',
           }
           try:
-              with urlopen(Request(endpoint, headers=headers)) as response:
+              with urlopen(Request(endpoint, headers=headers), timeout=30) as response:
                   pages = json.load(response)
           except HTTPError as error:
               print(f'::error::Não foi possível consultar Pages: HTTP {error.code}')
