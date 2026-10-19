@@ -262,10 +262,10 @@ img {
 }
 
 /* ==================================================
-   HERO
+   INTRODUÇÃO
 ================================================== */
 
-.hero {
+.intro {
   min-height: calc(100vh - 72px);
   padding-block: 100px 90px;
   display: grid;
@@ -294,7 +294,7 @@ img {
   color: var(--white);
 }
 
-.hero h1 {
+.intro h1 {
   max-width: 800px;
   margin-bottom: 30px;
   font-size: clamp(3.7rem, 8vw, 7.6rem);
@@ -304,7 +304,7 @@ img {
   text-transform: uppercase;
 }
 
-.hero h1 span {
+.intro h1 span {
   display: block;
   color: var(--gray-dark);
 }
@@ -773,7 +773,7 @@ img {
     width: min(100% - 40px, 720px);
   }
 
-  .hero {
+  .intro {
     min-height: auto;
     grid-template-columns: 1fr;
     gap: 56px;
@@ -806,7 +806,7 @@ img {
     font-size: 0.68rem;
   }
 
-  .hero {
+  .intro {
     gap: 36px;
     padding-block: 56px 64px;
   }
