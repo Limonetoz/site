@@ -289,7 +289,7 @@ img {
 }
 
 .system-label::before {
-  content: "";
+  content: ">";
   margin-right: 10px;
   color: var(--white);
 }
