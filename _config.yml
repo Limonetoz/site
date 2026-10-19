@@ -1,0 +1,4 @@
+# Arquivos de desenvolvimento não devem ser publicados.
+exclude:
+  - tests
+  - shell.nix

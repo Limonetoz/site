@@ -3,11 +3,13 @@
 pkgs.mkShell {
   buildInputs = with pkgs; [
     nodejs
-    live-server
+    jekyll
+    python3
   ];
 
   shellHook = ''
-    echo "🌐 Ambiente HTML/CSS carregado"
-    echo "Execute: live-server"
+    echo "Ambiente Jekyll carregado"
+    echo "Execute: jekyll serve --host 127.0.0.1 --port 4000"
+    echo "Abra: http://127.0.0.1:4000"
   '';
 }
