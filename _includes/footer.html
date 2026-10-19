@@ -1,0 +1,8 @@
+<footer class="footer">
+  <div class="footer-container container">
+    <p>© 2026 4LagDev // Site estático</p>
+    <nav class="footer-links" aria-label="Links secundários">
+      <a href="{% if page.home %}#inicio{% else %}{{ '/' | relative_url }}{% endif %}">Início</a>
+    </nav>
+  </div>
+</footer>

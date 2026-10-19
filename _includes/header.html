@@ -1,0 +1,16 @@
+<header class="header">
+  <div class="header-container container">
+    <a class="logo" href="{% if page.home %}#inicio{% else %}{{ '/' | relative_url }}{% endif %}" aria-label="Voltar ao início">
+      <span class="logo-mark" aria-hidden="true"></span>
+      <span class="logo-name">Code4lag_</span>
+    </a>
+
+    <nav class="navigation" aria-label="Navegação principal">
+      <ul>
+        <li>
+          <a href="{% unless page.home %}{{ '/' | relative_url }}{% endunless %}#posts">Posts</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</header>

@@ -2,3 +2,4 @@
 exclude:
   - tests
   - shell.nix
+  - README.md

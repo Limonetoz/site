@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="{{ page.description | default: page.excerpt | strip_html | strip_newlines | escape }}">
+  <meta name="theme-color" content="#050505">
+  <title>{% if page.home %}4LagDev // Blog{% else %}{{ page.title }} // 4LagDev{% endif %}</title>
+  <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+</head>
+<body>
+  {% if page.home %}
+    <div class="background" aria-hidden="true">
+      <span class="shape shape-square"></span>
+      <span class="shape shape-circle"></span>
+      <span class="shape shape-triangle"></span>
+      <span class="shape shape-cross"></span>
+    </div>
+  {% endif %}
+
+  {% include header.html %}
+
+  {{ content }}
+
+  {% include footer.html %}
+</body>
+</html>

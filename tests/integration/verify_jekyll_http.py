@@ -2,7 +2,12 @@ import sys
 from urllib.request import urlopen
 
 base = sys.argv[1].rstrip('/')
-paths = ['/', '/posts/2026/10/19/mudanca/', '/css/style.css', '/icon.svg']
+paths = [
+    '/',
+    '/posts/2026/10/19/mudanca/',
+    '/assets/css/style.css',
+    '/assets/images/icon.svg',
+]
 errors = []
 for path in paths:
     try:
