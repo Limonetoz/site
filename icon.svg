@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="512"
+     height="512"
+     viewBox="0 0 512 512"
+     role="img"
+     aria-labelledby="title description">
+  <title id="title">Invasor de óculos — mascote</title>
+  <desc id="description">
+    Alienígena retrô em pixels, verde-limão, com antenas,
+    braços abertos e óculos redondos de armação escura.
+    Fundo transparente.
+  </desc>
+
+  <!-- Silhueta contínua em grade de 32 pixels. -->
+  <path
+    fill="#B8F23C"
+    d="M 96 64
+       H 128 V 96 H 160 V 128
+       H 352 V 96 H 384 V 64 H 416 V 96
+       H 384 V 128 H 416 V 160 H 448 V 192
+       H 480 V 320 H 448 V 256 H 416 V 352
+       H 384 V 384 H 416 V 416 H 352 V 384
+       H 320 V 352 H 192 V 384 H 160 V 416
+       H 96 V 384 H 128 V 352 H 96 V 256
+       H 64 V 320 H 32 V 192 H 64 V 160
+       H 96 V 128 H 128 V 96 H 96 Z"
+  />
+
+  <!-- Reflexos discretos nas antenas. -->
+  <path
+    fill="#D9FF86"
+    d="M 96 64 H 128 V 80 H 96 Z
+       M 384 64 H 416 V 80 H 384 Z"
+  />
+
+  <!-- Lentes redondas com contraste suave. -->
+  <g fill="#F6ECD9" stroke="#302A28" stroke-width="12">
+    <circle cx="176" cy="224" r="56" />
+    <circle cx="336" cy="224" r="56" />
+  </g>
+
+  <!-- Ponte e hastes da armação. -->
+  <g fill="none"
+     stroke="#302A28"
+     stroke-width="12"
+     stroke-linecap="round">
+    <path d="M 232 222 Q 256 204 280 222" />
+    <path d="M 120 216 L 96 208" />
+    <path d="M 392 216 L 416 208" />
+  </g>
+
+  <!-- Olhos quadrados para manter o estilo arcade. -->
+  <g fill="#302A28">
+    <rect x="168" y="212" width="20" height="28" rx="3" />
+    <rect x="324" y="212" width="20" height="28" rx="3" />
+  </g>
+
+  <!-- Sorriso pixelizado. -->
+  <path
+    fill="#40551E"
+    d="M 224 298 H 240 V 310 H 272 V 298
+       H 288 V 320 H 224 Z"
+  />
+</svg>
