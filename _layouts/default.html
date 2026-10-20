@@ -4,8 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="{{ page.description | default: page.excerpt | strip_html | strip_newlines | escape }}">
-  <meta name="theme-color" content="#050505">
+  <meta name="theme-color" id="theme-color" content="#050505">
   <title>{% if page.home %}4LagDev // Blog{% else %}{{ page.title | escape }} // 4LagDev{% endif %}</title>
+  <script src="{{ '/assets/js/theme.js' | relative_url }}"></script>
   <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
 </head>
 <body>

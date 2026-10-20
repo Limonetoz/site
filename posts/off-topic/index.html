@@ -1,0 +1,36 @@
+---
+layout: default
+title: Off-topic
+description: Textos fora dos temas habituais do blog.
+---
+<main class="post-page container" id="conteudo">
+  <a class="post-back" href="{{ '/' | relative_url }}#posts">← Voltar aos posts</a>
+  <section class="section" aria-labelledby="off-topic-title">
+    <header class="section-heading">
+      <div>
+        <span class="section-index">02 // arquivo</span>
+        <h1 id="off-topic-title">Off-topic</h1>
+      </div>
+      <p>Textos fora dos temas habituais.</p>
+    </header>
+    <div class="posts-list">
+      {% assign off_topic_posts = site.categories['off-topic'] %}
+      {% for post in off_topic_posts %}
+        <article class="post">
+          <div class="post-symbol" aria-hidden="true">&gt;</div>
+          <div class="post-content">
+            <span class="post-category">Off-topic</span>
+            <h2><a href="{{ post.url | relative_url }}">{{ post.title | escape }}</a></h2>
+            <p>{{ post.excerpt | strip_html | strip_newlines | truncate: 160 | escape }}</p>
+          </div>
+          <div class="post-meta">
+            <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%d.%m.%Y" }}</time>
+            <a class="post-link" href="{{ post.url | relative_url }}">Abrir <span aria-hidden="true">→</span></a>
+          </div>
+        </article>
+      {% else %}
+        <p class="posts-empty">Nenhum post Off-topic publicado ainda.</p>
+      {% endfor %}
+    </div>
+  </section>
+</main>

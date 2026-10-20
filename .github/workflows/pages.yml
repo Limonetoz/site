@@ -24,6 +24,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Configurar Node.js para os testes de tema
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: Configurar Pages
         id: pages
         uses: actions/configure-pages@v5
@@ -38,6 +43,18 @@ jobs:
         env:
           BASE_PATH: ${{ steps.pages.outputs.base_path }}
         run: python3 tests/integration/test_built_site.py _site --base-path "$BASE_PATH"
+
+      - name: Preparar Jekyll para fixtures isoladas
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+
+      - name: Testar arquivo Off-topic com e sem artigos
+        env:
+          TMPDIR: ${{ runner.temp }}
+        run: |
+          gem install jekyll -v 4.4.1 --no-document
+          python3 tests/integration/test_off_topic_fixture.py
 
       - name: Enviar somente o artefato aprovado
         uses: actions/upload-pages-artifact@v3

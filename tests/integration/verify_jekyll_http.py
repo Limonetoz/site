@@ -1,10 +1,13 @@
 """Validate generated pages and their local links through HTTP."""
 
 import argparse
+import shutil
+import subprocess
 import sys
 from collections import deque
 from datetime import datetime
 from html.parser import HTMLParser
+from pathlib import Path
 from urllib.parse import urldefrag, urljoin, urlsplit
 from urllib.request import urlopen
 
@@ -156,6 +159,76 @@ def check_blog(base, pages):
         if not back_links:
             raise ValueError(f'Retorno aos posts incorreto: {target}')
 
+def check_off_topic(base, pages):
+    archive = urljoin(base, 'posts/off-topic/')
+    home = pages[base]
+    for url, page in pages.items():
+        if not any(urljoin(url, link.attrs.get('href', '')) == archive
+                   and 'off-topic' in link.text().lower()
+                   for nav in page.root.find('nav') for link in nav.find('a')):
+            raise ValueError(f'Navegação Off-topic ausente: {url}')
+    if archive not in pages:
+        raise ValueError(f'Arquivo Off-topic não renderizado: {archive}')
+    main = one(pages[archive].root, 'main')
+    cards = list(main.find('article'))
+    if not cards and not any(node.text() for node in main.find('p', 'posts-empty')):
+        raise ValueError('Arquivo Off-topic sem posts e sem estado vazio visível')
+    home_sections = [section for section in home.root.find('section')
+                     if section.attrs.get('id') == 'posts']
+    if len(home_sections) != 1:
+        raise ValueError('Seção de posts da página inicial ausente')
+    home_targets = {
+        urljoin(base, link.attrs['href'])
+        for card in home_sections[0].find('article')
+        for heading in card.find() if heading.tag in ('h2', 'h3', 'h4')
+        for link in heading.find('a') if link.attrs.get('href')
+        if any(part.strip().lower() == 'off-topic'
+               for part in one(card, 'span', 'post-category').text().split('//'))
+    }
+    seen = set()
+    for card in cards:
+        headings = [node for node in card.find() if node.tag in ('h2', 'h3', 'h4')]
+        if len(headings) != 1:
+            raise ValueError('Card Off-topic sem título único')
+        link = one(headings[0], 'a')
+        target = urljoin(archive, link.attrs.get('href', ''))
+        if target not in home_targets or target in seen or target not in pages:
+            raise ValueError(f'Post Off-topic inválido ou repetido: {target}')
+        seen.add(target)
+    if seen != home_targets:
+        raise ValueError(f'Arquivo Off-topic não corresponde aos posts categorizados: '
+                         f'esperados {sorted(home_targets)}, encontrados {sorted(seen)}')
+
+def check_theme(base, pages):
+    scripts = set()
+    for url, page in pages.items():
+        buttons = [node for node in page.root.find('button')
+                   if node.attrs.get('id') == 'theme-toggle']
+        if len(buttons) != 1 or not (buttons[0].text() or
+                                    buttons[0].attrs.get('aria-label')):
+            raise ValueError(f'Botão acessível #theme-toggle ausente: {url}')
+        local = [urljoin(url, node.attrs['src']) for node in page.root.find('script')
+                 if node.attrs.get('src') and
+                 urljoin(url, node.attrs['src']).startswith(base)]
+        if not local:
+            raise ValueError(f'Script local do tema ausente: {url}')
+        scripts.update(local)
+    if not shutil.which('node'):
+        raise ValueError('Node.js necessário para testar persistência do tema')
+    failures = []
+    for script in scripts:
+        with urlopen(script, timeout=10) as response:
+            if response.status != 200 or response.headers.get_content_type() not in (
+                    'text/javascript', 'application/javascript'):
+                raise ValueError(f'Script local indisponível: {script}')
+            source = response.read().decode('utf-8')
+        result = subprocess.run(['node', str(Path(__file__).with_name('verify_theme.js'))],
+                                input=source, text=True, capture_output=True, check=False)
+        if not result.returncode:
+            return
+        failures.append(f'{script}: {result.stderr.strip()}')
+    raise ValueError('Nenhum script local inicializa/persiste o tema: ' + '; '.join(failures))
+
 
 def verify(base):
     base = base.rstrip('/') + '/'
@@ -221,6 +294,8 @@ def verify(base):
     if base in pages and not errors:
         try:
             check_blog(base, pages)
+            check_off_topic(base, pages)
+            check_theme(base, pages)
         except ValueError as error:
             errors.append(f'{base}: {error}')
     for error in errors:

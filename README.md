@@ -14,7 +14,7 @@
 
 Um histórico do que ando trabalhando: estudos, tecnologia e projetos.
 Um blog estático feito com **Jekyll**, **Markdown**, **HTML/Liquid** e **CSS**,
-sem JavaScript no navegador.
+com JavaScript leve apenas para alternar entre tema claro e escuro.
 
 **[Explorar posts →](https://limonetoz.github.io/site/#posts)**
 
@@ -40,6 +40,13 @@ permalink: /posts/:year/:month/:day/:title/
 Escreva o conteúdo em Markdown abaixo do cabeçalho. As URLs dos artigos
 ficam sob `/posts/`.
 
+Para incluir um artigo na subcategoria **Off-topic**, use
+`categories: [off-topic]` no cabeçalho. A página
+[`/posts/off-topic/`](https://limonetoz.github.io/site/posts/off-topic/)
+lista apenas esses artigos e mostra uma mensagem quando não houver nenhum.
+O botão de tema no cabeçalho acompanha a preferência do sistema até a primeira
+escolha manual; depois, guarda essa escolha no navegador.
+
 ## `02 // estrutura`
 
 ```text
@@ -52,8 +59,10 @@ site/
 │   ├── default.html
 │   └── post.html
 ├── _posts/                      # Artigos em Markdown
+├── posts/off-topic/index.html   # Arquivo da subcategoria Off-topic
 ├── assets/
 │   ├── css/style.css            # Estilos do site
+│   ├── js/theme.js              # Alternância de tema
 │   └── images/icon.svg          # Mascote verde-limão
 ├── tests/
 │   ├── integration/             # Testes HTTP
@@ -98,6 +107,7 @@ As verificações cobrem:
 - Um título principal e uma área de conteúdo por página.
 - Imagens com texto alternativo e link do repositório presente.
 - CSS, mascote e demais arquivos vinculados acessíveis por HTTP.
+- Arquivo Off-topic filtrado e com estado vazio; tema alternável e persistido.
 
 [Instruções completas dos testes →](tests/README.md)
 

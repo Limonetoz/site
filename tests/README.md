@@ -13,6 +13,12 @@
   artigos, mensagem explícita de lista vazia;
 - título, categoria e data ISO/data visível consistentes entre card e artigo;
 - artigo com conteúdo, título do documento, descrição, navegação e retorno para `#posts`.
+- botão acessível `#theme-toggle` em todas as páginas, script local e execução
+  isolada em Node.js: tema inicial conforme `prefers-color-scheme`, preferência
+  `site-theme` prevalecendo e alternância persistida após clique;
+- navegação Off-topic para `/posts/off-topic/`, arquivo com somente os posts
+  categorizados `off-topic` (links descobertos dos cards da página inicial)
+  ou mensagem explícita quando vazio.
 
 As comparações usam os próprios cards renderizados, sem fixar título, data, URL
 ou frases de uma publicação. Um blog sem posts é válido se mostrar o estado
@@ -43,9 +49,10 @@ e também pode ser iniciado manualmente na aba Actions.
 
 1. Compila o site com a ação oficial do Jekyll para GitHub Pages.
 2. Serve o resultado em HTTP e executa os testes no prefixo de produção.
-3. Envia o artefato somente se os testes passarem.
-4. Confirma que o Pages usa GitHub Actions, em vez do deploy direto da branch.
-5. Publica esse mesmo artefato em um job com `needs: [build_test, pages_source]`.
+3. Valida fixtures isoladas da categoria Off-topic com e sem artigos, em `/` e `/site`.
+4. Envia o artefato somente se os testes passarem.
+5. Confirma que o Pages usa GitHub Actions, em vez do deploy direto da branch.
+6. Publica esse mesmo artefato em um job com `needs: [build_test, pages_source]`.
 
 Se build, testes ou validação da origem falharem, o job de deploy não executa.
 A origem precisa ser selecionada uma vez, manualmente: **Settings → Pages →
@@ -62,6 +69,20 @@ nix-shell --run 'python3 tests/integration/test_built_site.py _site --base-path 
 
 O servidor usa uma porta livre, é encerrado ao final e o processo retorna
 código diferente de zero se qualquer verificação falhar.
+
+Para provar filtragem e estado vazio sem editar `_posts/`, rode a fixture
+isolada (requer Jekyll, Node.js e `TMPDIR`):
+
+```sh
+nix-shell --run 'python3 tests/integration/test_off_topic_fixture.py'
+```
+
+Ela copia o código-fonte para `$TMPDIR`, adiciona um post `off-topic` e
+outro `estudos` com datas passadas, compila e testa tanto `/` quanto `/site/`.
+Depois remove somente os posts da cópia, recompila e verifica o estado vazio;
+também executa as verificações HTTP/alt/links e o teste do script de tema.
+Não cria nem altera posts no repositório. Antes da implementação, o resultado
+esperado (RED) é falha por ausência do arquivo e do botão de tema.
 
 Para provar que a validação de títulos rejeita artefatos quebrados sem tocar
 nos posts, crie uma cópia temporária do build e altere apenas o HTML gerado

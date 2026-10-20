@@ -10,6 +10,7 @@
         <li>
           <a href="{% unless page.home %}{{ '/' | relative_url }}{% endunless %}#posts">Posts</a>
         </li>
+        <li><a href="{{ '/posts/off-topic/' | relative_url }}">Off-topic</a></li>
         <li>
           <a
             href="https://github.com/Limonetoz/site"
@@ -18,6 +19,7 @@
             aria-label="Repositório do site no GitHub (abre em nova aba)"
           >GitHub</a>
         </li>
+        <li><button type="button" id="theme-toggle" class="theme-toggle" hidden>Alternar tema</button></li>
       </ul>
     </nav>
   </div>
