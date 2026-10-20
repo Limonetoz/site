@@ -8,12 +8,17 @@
 - links respeitando o prefixo do site e âncoras existentes;
 - exatamente um `h1` e um `main` por página;
 - imagens com atributo `alt` e folha de estilos presente;
-- link do repositório e proteção `noopener` em links que abrem nova aba.
+- link do repositório e proteção `noopener` em links que abrem nova aba;
+- cards de posts com título, resumo e link para a página publicada; se não houver
+  artigos, mensagem explícita de lista vazia;
+- título, categoria e data ISO/data visível consistentes entre card e artigo;
+- artigo com conteúdo, título do documento, descrição, navegação e retorno para `#posts`.
 
-O teste não depende do título, da data ou do nome de um post específico.
-Não cria nem apaga publicações. Links externos não são consultados, evitando
-falhas de rede de terceiros no deploy. Ele verifica a estrutura do HTML,
-mas não substitui a revisão visual de responsividade e contraste.
+As comparações usam os próprios cards renderizados, sem fixar título, data, URL
+ou frases de uma publicação. Um blog sem posts é válido se mostrar o estado
+vazio. Não cria nem apaga publicações. Links externos não são consultados,
+evitando falhas de rede de terceiros no deploy. Ele verifica a estrutura do
+HTML, mas não substitui a revisão visual de responsividade e contraste.
 
 Na raiz do projeto, inicie o servidor:
 
@@ -57,3 +62,39 @@ nix-shell --run 'python3 tests/integration/test_built_site.py _site --base-path 
 
 O servidor usa uma porta livre, é encerrado ao final e o processo retorna
 código diferente de zero se qualquer verificação falhar.
+
+Para provar que a validação de títulos rejeita artefatos quebrados sem tocar
+nos posts, crie uma cópia temporária do build e altere apenas o HTML gerado
+(entre em `nix-shell` antes do bloco se `python3` não existir no sistema):
+
+```sh
+fixture=$(mktemp -d "${TMPDIR:?Defina TMPDIR para uma pasta temporária}/jekyll-negative-XXXXXX")
+cp -a _site/. "$fixture/"
+python3 - "$fixture" <<'PY'
+from pathlib import Path
+from urllib.parse import urljoin, urlsplit
+import sys
+
+sys.path.insert(0, str(Path('tests/integration').resolve()))
+from verify_jekyll_http import Page
+
+root = Path(sys.argv[1])
+home = Page()
+home.feed((root / 'index.html').read_text())
+posts = next(node for node in home.root.find('section') if node.attrs.get('id') == 'posts')
+card = next(posts.find('article'))
+heading = next(node for node in card.find() if node.tag in ('h2', 'h3', 'h4'))
+href = next(heading.find('a')).attrs['href']
+path = urlsplit(urljoin('https://example.test/site/', href)).path.removeprefix('/site/')
+post = root / path
+if post.is_dir():
+    post /= 'index.html'
+html = post.read_text()
+assert '<h1>' in html
+post.write_text(html.replace('<h1>', '<h1>Incompatível ', 1))
+PY
+nix-shell --run "python3 tests/integration/test_built_site.py '$fixture' --base-path /site"
+# Esperado: código 1, com "Título do card difere do post".
+```
+
+A fixture fica fora do repositório; o build original continua intacto.
