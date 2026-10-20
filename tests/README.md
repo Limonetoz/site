@@ -13,6 +13,8 @@
   artigos, mensagem explícita de lista vazia;
 - título, categoria e data ISO/data visível consistentes entre card e artigo;
 - artigo com conteúdo, título do documento, descrição, navegação e retorno para `#posts`.
+- variação do mascote com notebook somente nos dois artigos sobre agentes, identificados
+  pela `translation_key`, com descrição acessível e imagem local válida em `/` e `/site`;
 - botão acessível `#theme-toggle` em todas as páginas, script local e execução
   isolada em Node.js: tema inicial conforme `prefers-color-scheme`, preferência
   `site-theme` prevalecendo e alternância persistida após clique;

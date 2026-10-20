@@ -5,6 +5,8 @@ date: 2026-10-19
 categories: [Tecnologia]
 lang: en
 translation_key: 2026-10-19-mudanca
+image: /assets/images/icon-agents.svg
+image_alt: Green mascot wearing glasses behind a laptop with the Hermes Agent symbol
 permalink: /en/posts/:year/:month/:day/:title/
 ---
 

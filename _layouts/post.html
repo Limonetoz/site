@@ -20,6 +20,12 @@ layout: default
       <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%d.%m.%Y" }}</time>
     </header>
 
+    {% if page.image %}
+      <figure class="post-entry-art">
+        <img src="{{ page.image | relative_url }}" alt="{{ page.image_alt | default: page.title | escape }}" width="512" height="512">
+      </figure>
+    {% endif %}
+
     <div class="post-entry-content">{{ content }}</div>
   </article>
 </main>

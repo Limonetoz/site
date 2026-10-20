@@ -927,6 +927,17 @@ img {
   letter-spacing: 0.08em;
 }
 
+.post-entry-art {
+  width: min(100%, 320px);
+  margin: 28px auto 0;
+}
+
+.post-entry-art img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .post-entry-content {
   padding-top: 42px;
   overflow-wrap: anywhere;

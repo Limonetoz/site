@@ -94,8 +94,33 @@ def check_post_navigation(page, page_url, base):
         raise ValueError(f'Navegação para a lista de posts incorreta: {page_url}')
 
 
-def check_blog(base, pages):
+def agent_art_titles():
+    """Find the translated agent articles by their stable translation key."""
+    titles = {}
+    posts = Path(__file__).resolve().parents[2] / '_posts'
+    for source in posts.glob('*.md'):
+        front_matter = re.match(r'\A---\s*\n(.*?)\n---', source.read_text(encoding='utf-8'), re.S)
+        if not front_matter:
+            continue
+        fields = dict(re.findall(r'^([a-z_]+):[ \t]*(.*)$', front_matter.group(1), re.M))
+        if fields.get('translation_key') != '2026-10-19-mudanca':
+            continue
+        language = fields.get('lang')
+        if (language not in ('pt', 'en') or language in titles
+                or fields.get('image') != '/assets/images/icon-agents.svg'
+                or not fields.get('image_alt', '').strip()
+                or not fields.get('title', '').strip()):
+            raise ValueError(f'Metadados da arte do post inválidos: {source}')
+        titles[language] = fields['title'].strip().strip('"\'')
+    if set(titles) != {'pt', 'en'}:
+        raise ValueError('O par de posts sobre agentes precisa ter a ilustração')
+    return titles
+
+
+def check_blog(base, pages, agent_titles):
     home = pages[base]
+    language = 'en' if base.rstrip('/').endswith('/en') else 'pt'
+    art_pages = set()
     check_post_navigation(home, base, base)
     posts = [node for node in home.root.find('section')
              if node.attrs.get('id') == 'posts']
@@ -107,7 +132,7 @@ def check_blog(base, pages):
                  if node.text()]
         if len(empty) != 1:
             raise ValueError('Nenhum post ou mensagem de lista vazia na página inicial')
-        return
+        return art_pages
     seen = set()
     for card in cards:
         headings = [node for node in card.find()
@@ -131,6 +156,17 @@ def check_blog(base, pages):
         detail = pages[target]
         check_post_navigation(detail, target, base)
         entry = one(one(detail.root, 'main'), 'article')
+        if title == agent_titles[language]:
+            illustration = one(entry, 'figure', 'post-entry-art')
+            icon = one(illustration, 'img')
+            site_base = base if not base.rstrip('/').endswith('/en') else urljoin(base, '../')
+            if (urljoin(target, icon.attrs.get('src', ''))
+                    != urljoin(site_base, 'assets/images/icon-agents.svg')
+                    or not icon.attrs.get('alt', '').strip()):
+                raise ValueError(f'Ilustração do post sobre agentes ausente ou inacessível: {target}')
+            art_pages.add(target)
+        elif list(entry.find('figure', 'post-entry-art')):
+            raise ValueError(f'Ilustração dos agentes em outro post: {target}')
         if one(entry, 'h1').text() != title:
             raise ValueError(f'Título do card difere do post: {target}')
         if title not in one(detail.root, 'title').text():
@@ -161,6 +197,10 @@ def check_blog(base, pages):
                       if urljoin(target, link.attrs.get('href', '')) == base + '#posts']
         if not back_links:
             raise ValueError(f'Retorno aos posts incorreto: {target}')
+
+    if len(art_pages) != 1:
+        raise ValueError(f'Post ilustrado de {language} não encontrado na listagem')
+    return art_pages
 
 def check_off_topic(base, pages):
     archive = urljoin(base, 'posts/off-topic/')
@@ -619,14 +659,21 @@ def verify(base):
     if base in pages and not errors:
         try:
             check_localization(base, pages)
+            agent_titles = agent_art_titles()
+            allowed_art_pages = set()
             for locale, language in ((base, 'pt'), (urljoin(base, 'en/'), 'en')):
                 localized = {url: page for url, page in pages.items()
                              if url.startswith(locale)
                              and (language == 'en' or not url.startswith(urljoin(base, 'en/')))}
-                check_blog(locale, localized)
+                allowed_art_pages.update(check_blog(locale, localized, agent_titles))
                 check_off_topic(locale, localized)
                 check_tutorial(locale, localized)
                 check_about(locale, localized, language, base)
+            art_url = urljoin(base, 'assets/images/icon-agents.svg')
+            for url, page in pages.items():
+                if url not in allowed_art_pages and any(
+                        urljoin(url, image.get('src', '')) == art_url for image in page.images):
+                    raise ValueError(f'Ícone dos agentes fora dos dois artigos: {url}')
             check_feeds(base, pages)
             check_font(base, pages)
             check_theme(base, pages)
