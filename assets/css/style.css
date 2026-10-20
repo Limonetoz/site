@@ -435,14 +435,14 @@ img {
 
 .profile-area {
   position: relative;
-  min-height: 420px;
+  min-height: 294px;
   display: grid;
   place-items: center;
 }
 
 .profile-frame {
   position: absolute;
-  width: 340px;
+  width: 238px;
   aspect-ratio: 1;
   border: 1px solid var(--grid-line);
   border-radius: 50%;
@@ -469,7 +469,7 @@ img {
 .profile-card {
   position: relative;
   z-index: 2;
-  width: min(290px, 90%);
+  width: min(203px, 90%);
   padding: 8px;
   border: 1px solid var(--border);
   background: var(--profile-card-bg);
@@ -487,7 +487,7 @@ img {
 
 .profile-image {
   position: relative;
-  height: 250px;
+  height: 175px;
   overflow: hidden;
   display: grid;
   place-items: center;
@@ -629,7 +629,7 @@ img {
 .post h2,
 .post h3 {
   margin-bottom: 10px;
-  font-size: clamp(1rem, 2vw, 1.35rem);
+  font-size: clamp(0.875rem, 1.4vw, 0.95rem);
   font-weight: 500;
   overflow-wrap: anywhere;
 }
@@ -810,19 +810,19 @@ img {
   }
 
   .profile-area {
-    min-height: 310px;
+    min-height: 217px;
   }
 
   .profile-frame {
-    width: min(78vw, 290px);
+    width: min(54.6vw, 203px);
   }
 
   .profile-card {
-    width: min(260px, 86vw);
+    width: min(182px, 86vw);
   }
 
   .profile-image {
-    height: 210px;
+    height: 147px;
   }
 
   .system-label {
@@ -915,7 +915,7 @@ img {
 .post-entry-header h1 {
   margin: 14px 0 22px;
   color: var(--white);
-  font-size: clamp(2.2rem, 6vw, 5rem);
+  font-size: clamp(1.54rem, 4.2vw, 3.5rem);
   font-weight: 400;
   line-height: 0.98;
   letter-spacing: -0.06em;
@@ -1009,10 +1009,10 @@ img {
 }
 
 .about-avatar {
-  width: 96px;
-  height: 96px;
+  width: 67px;
+  height: 67px;
   margin: 28px 0 24px;
-  padding: 8px;
+  padding: 6px;
   display: grid;
   place-items: center;
   border: 1px solid var(--border);
