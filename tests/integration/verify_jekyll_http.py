@@ -199,6 +199,54 @@ def check_off_topic(base, pages):
         raise ValueError(f'Arquivo Off-topic não corresponde aos posts categorizados: '
                          f'esperados {sorted(home_targets)}, encontrados {sorted(seen)}')
 
+def check_about(base, pages):
+    about_url = urljoin(base, 'sobre/')
+    for url, page in pages.items():
+        links = [link for nav in page.root.find('nav') for link in nav.find('a')
+                 if link.text().strip().lower() == 'sobre']
+        if len(links) != 1 or urljoin(url, links[0].attrs.get('href', '')) != about_url:
+            raise ValueError(f'Navegação Sobre fora do baseurl: {url}')
+    if about_url not in pages:
+        raise ValueError(f'Página Sobre não renderizada: {about_url}')
+
+    about = pages[about_url]
+    main = one(about.root, 'main')
+    if not one(main, 'h1').text():
+        raise ValueError('Página Sobre sem título visível no conteúdo principal')
+    home_styles = {link.attrs.get('href') for link in pages[base].root.find('link')
+                   if 'stylesheet' in link.attrs.get('rel', '').split()}
+    about_styles = {link.attrs.get('href') for link in about.root.find('link')
+                    if 'stylesheet' in link.attrs.get('rel', '').split()}
+    if not home_styles.intersection(about_styles):
+        raise ValueError('Página Sobre não usa a folha de estilos compartilhada')
+
+    profiles = {'https://github.com/Limonetoz/', 'https://codeberg.org/Code4lag'}
+    external = [link for link in main.find('a')
+                if urlsplit(link.attrs.get('href', '')).scheme in ('http', 'https')]
+    if len(external) != 2 or {link.attrs['href'] for link in external} != profiles:
+        raise ValueError('Página Sobre deve conter exatamente os dois links de perfil')
+    for link in external:
+        if not link.text():
+            raise ValueError(f'Link de perfil sem texto acessível: {link.attrs["href"]}')
+        if (link.attrs.get('target') == '_blank' and
+                'noopener' not in link.attrs.get('rel', '').split()):
+            raise ValueError(f'Link de perfil em nova aba sem proteção: {link.attrs["href"]}')
+        icons = list(link.find('img'))
+        if len(icons) != 1:
+            raise ValueError(f'Link de perfil sem ícone SVG: {link.attrs["href"]}')
+        icon = icons[0]
+        src = icon.attrs.get('src', '')
+        parsed = urlsplit(urljoin(about_url, src))
+        if (not parsed.path.lower().endswith('.svg') or
+                (parsed.scheme, parsed.netloc) != (urlsplit(base).scheme, urlsplit(base).netloc)
+                or not parsed.path.startswith(urlsplit(base).path)):
+            raise ValueError(f'Ícone SVG local inválido: {src}')
+        if 'alt' not in icon.attrs and icon.attrs.get('aria-hidden') != 'true':
+            raise ValueError(f'Ícone SVG sem alt ou aria-hidden: {src}')
+        with urlopen(urljoin(about_url, src), timeout=10) as response:
+            if response.status != 200 or response.headers.get_content_type() != 'image/svg+xml':
+                raise ValueError(f'Ícone SVG não carregado: {src}')
+
 def check_theme(base, pages):
     scripts = set()
     for url, page in pages.items():
@@ -295,6 +343,7 @@ def verify(base):
         try:
             check_blog(base, pages)
             check_off_topic(base, pages)
+            check_about(base, pages)
             check_theme(base, pages)
         except ValueError as error:
             errors.append(f'{base}: {error}')

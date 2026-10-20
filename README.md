@@ -1,6 +1,6 @@
 # `Code4lag_`
 
-[Posts](https://limonetoz.github.io/site/#posts) · [GitHub](https://github.com/Limonetoz/site)
+[Posts](https://limonetoz.github.io/site/#posts) · [Sobre](https://limonetoz.github.io/site/sobre/) · [GitHub](https://github.com/Limonetoz/site)
 
 ---
 
@@ -47,6 +47,13 @@ lista apenas esses artigos e mostra uma mensagem quando não houver nenhum.
 O botão de tema no cabeçalho acompanha a preferência do sistema até a primeira
 escolha manual; depois, guarda essa escolha no navegador.
 
+A página [Sobre](https://limonetoz.github.io/site/sobre/) reúne os perfis
+GitHub e Codeberg com os ícones das respectivas plataformas. O símbolo do
+GitHub foi extraído do [perfil no GitHub](https://github.com/Limonetoz/) e o
+do Codeberg do [SVG oficial](https://codeberg.org/assets/img/svg/cb-logo.svg).
+As marcas pertencem às respectivas plataformas; esses arquivos não representam
+uma licença de uso das marcas fora deste contexto de identificação de links.
+
 ## `02 // estrutura`
 
 ```text
@@ -60,10 +67,11 @@ site/
 │   └── post.html
 ├── _posts/                      # Artigos em Markdown
 ├── posts/off-topic/index.html   # Arquivo da subcategoria Off-topic
+├── sobre/index.html             # Página de perfis e links
 ├── assets/
 │   ├── css/style.css            # Estilos do site
 │   ├── js/theme.js              # Alternância de tema
-│   └── images/icon.svg          # Mascote verde-limão
+│   └── images/                  # Mascote e ícones GitHub/Codeberg
 ├── tests/
 │   ├── integration/             # Testes HTTP
 │   └── README.md
@@ -108,6 +116,7 @@ As verificações cobrem:
 - Imagens com texto alternativo e link do repositório presente.
 - CSS, mascote e demais arquivos vinculados acessíveis por HTTP.
 - Arquivo Off-topic filtrado e com estado vazio; tema alternável e persistido.
+- Página Sobre e perfis com ícones SVG locais, também no prefixo `/site`.
 
 [Instruções completas dos testes →](tests/README.md)
 

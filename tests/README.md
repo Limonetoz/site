@@ -18,7 +18,9 @@
   `site-theme` prevalecendo e alternância persistida após clique;
 - navegação Off-topic para `/posts/off-topic/`, arquivo com somente os posts
   categorizados `off-topic` (links descobertos dos cards da página inicial)
-  ou mensagem explícita quando vazio.
+  ou mensagem explícita quando vazio;
+- navegação Sobre, página em `/sobre/`, dois links de perfil exatos e ícones SVG
+  locais acessíveis e disponíveis por HTTP em `/` e `/site`.
 
 As comparações usam os próprios cards renderizados, sem fixar título, data, URL
 ou frases de uma publicação. Um blog sem posts é válido se mostrar o estado
