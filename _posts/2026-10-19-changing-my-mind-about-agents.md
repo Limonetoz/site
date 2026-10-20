@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Changing my mind about using agents
+description: "I started using agents to save time without dropping my concerns about irresponsible AI use or its effect on junior developers' learning."
 date: 2026-10-19
 categories: [Tecnologia]
 lang: en

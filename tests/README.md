@@ -7,15 +7,17 @@
 - arquivos vinculados respondendo com HTTP 200, sem redirecionamentos;
 - links respeitando o prefixo do site e âncoras existentes;
 - exatamente um `h1` e um `main` por página;
-- imagens com atributo `alt` e folha de estilos presente;
+- imagens com atributo `alt`, folha de estilos e favicon local presentes;
 - link do repositório e proteção `noopener` em links que abrem nova aba;
 - cards de posts com título, resumo e link para a página publicada; se não houver
   artigos, mensagem explícita de lista vazia;
 - título, categoria e data ISO/data visível consistentes entre card e artigo;
 - artigo com conteúdo, título do documento, descrição, navegação e retorno para `#posts`.
-- variação do mascote com notebook somente nos dois artigos sobre agentes, identificados
-  pela `translation_key`, com descrição acessível e imagem local válida em `/` e `/site`;
-- botão acessível `#theme-toggle` em todas as páginas, script local e execução
+- ilustrações declaradas no front matter somente nos artigos correspondentes,
+  com descrição acessível e imagem local válida em `/` e `/site`; o ícone dos
+  agentes é obrigatório apenas no par PT/EN aprovado;
+- botão acessível `#theme-toggle` com rótulos PT/EN e `theme.js` em todas as
+  páginas, com execução
   isolada em Node.js: tema inicial conforme `prefers-color-scheme`, preferência
   `site-theme` prevalecendo e alternância persistida após clique;
 - navegação Off-topic para `/posts/off-topic/`, arquivo com somente os posts

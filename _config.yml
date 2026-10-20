@@ -1,4 +1,3 @@
-# Arquivos de desenvolvimento não devem ser publicados.
 url: https://limonetoz.github.io
 exclude:
   - tests

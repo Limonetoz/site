@@ -22,7 +22,8 @@
   </g>
   <path fill="#40551E" d="M 224 298 H 240 V 310 H 272 V 298 H 288 V 320 H 224 Z" />
 
-  <!-- Notebook: contorno angular, visor e logo fornecido pelo próprio Hermes Agent. -->
+  <!-- Logo embutido: NousResearch/hermes-agent/website/static/img/logo-dark.png
+       SHA-256 b76ed32dd5ffdf842db696dc6dc0992529acfe12903ec1b2128251a41dfd31d2. -->
   <rect x="76" y="290" width="360" height="158" rx="16" fill="#302A28" />
   <rect x="88" y="302" width="336" height="134" rx="8" fill="#F6ECD9" />
   <rect x="96" y="310" width="320" height="118" rx="4" fill="#172023" />

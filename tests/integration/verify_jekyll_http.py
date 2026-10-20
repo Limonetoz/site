@@ -94,30 +94,42 @@ def check_post_navigation(page, page_url, base):
         raise ValueError(f'Navegação para a lista de posts incorreta: {page_url}')
 
 
-def agent_art_titles():
-    """Find the translated agent articles by their stable translation key."""
-    titles = {}
-    posts = Path(__file__).resolve().parents[2] / '_posts'
-    for source in posts.glob('*.md'):
+def post_art_by_title(posts):
+    """Derive optional article artwork expectations from source front matter."""
+    artwork = {}
+    agent_icon_languages = {}
+    for source in posts.rglob('*.md'):
         front_matter = re.match(r'\A---\s*\n(.*?)\n---', source.read_text(encoding='utf-8'), re.S)
         if not front_matter:
             continue
         fields = dict(re.findall(r'^([a-z_]+):[ \t]*(.*)$', front_matter.group(1), re.M))
-        if fields.get('translation_key') != '2026-10-19-mudanca':
+        image = fields.get('image', '').strip().strip('"\'')
+        # The approved illustration must remain on this translated article pair.
+        if (fields.get('translation_key') == '2026-10-19-mudanca'
+                and image != '/assets/images/icon-agents.svg'):
+            raise ValueError(f'Ilustração aprovada ausente: {source}')
+        if not image:
             continue
         language = fields.get('lang')
-        if (language not in ('pt', 'en') or language in titles
-                or fields.get('image') != '/assets/images/icon-agents.svg'
-                or not fields.get('image_alt', '').strip()
-                or not fields.get('title', '').strip()):
-            raise ValueError(f'Metadados da arte do post inválidos: {source}')
-        titles[language] = fields['title'].strip().strip('"\'')
-    if set(titles) != {'pt', 'en'}:
-        raise ValueError('O par de posts sobre agentes precisa ter a ilustração')
-    return titles
+        title = fields.get('title', '').strip().strip('"\'')
+        alt = fields.get('image_alt', '').strip().strip('"\'')
+        key = (language, title)
+        if (language not in ('pt', 'en') or not title or key in artwork
+                or not image.startswith('/assets/images/') or not alt):
+            raise ValueError(f'Metadados de imagem do post inválidos: {source}')
+        artwork[key] = (image, alt)
+        if image == '/assets/images/icon-agents.svg':
+            translation_key = fields.get('translation_key')
+            if not translation_key:
+                raise ValueError(f'Ícone dos agentes sem par traduzido: {source}')
+            agent_icon_languages.setdefault(translation_key, set()).add(language)
+    if agent_icon_languages and (len(agent_icon_languages) != 1
+                                 or next(iter(agent_icon_languages.values())) != {'pt', 'en'}):
+        raise ValueError('O ícone dos agentes pertence a um único par PT/EN')
+    return artwork
 
 
-def check_blog(base, pages, agent_titles):
+def check_blog(base, pages, artwork):
     home = pages[base]
     language = 'en' if base.rstrip('/').endswith('/en') else 'pt'
     art_pages = set()
@@ -156,17 +168,18 @@ def check_blog(base, pages, agent_titles):
         detail = pages[target]
         check_post_navigation(detail, target, base)
         entry = one(one(detail.root, 'main'), 'article')
-        if title == agent_titles[language]:
+        expected_art = artwork.get((language, title))
+        if expected_art:
             illustration = one(entry, 'figure', 'post-entry-art')
             icon = one(illustration, 'img')
             site_base = base if not base.rstrip('/').endswith('/en') else urljoin(base, '../')
             if (urljoin(target, icon.attrs.get('src', ''))
-                    != urljoin(site_base, 'assets/images/icon-agents.svg')
-                    or not icon.attrs.get('alt', '').strip()):
-                raise ValueError(f'Ilustração do post sobre agentes ausente ou inacessível: {target}')
+                    != urljoin(site_base, expected_art[0].lstrip('/'))
+                    or icon.attrs.get('alt') != expected_art[1]):
+                raise ValueError(f'Ilustração do post ausente ou incorreta: {target}')
             art_pages.add(target)
         elif list(entry.find('figure', 'post-entry-art')):
-            raise ValueError(f'Ilustração dos agentes em outro post: {target}')
+            raise ValueError(f'Ilustração não declarada no post: {target}')
         if one(entry, 'h1').text() != title:
             raise ValueError(f'Título do card difere do post: {target}')
         if title not in one(detail.root, 'title').text():
@@ -174,8 +187,8 @@ def check_blog(base, pages, agent_titles):
         description = [meta.attrs.get('content', '').strip()
                        for meta in detail.root.find('meta')
                        if meta.attrs.get('name') == 'description']
-        if len(description) != 1 or not description[0]:
-            raise ValueError(f'Descrição do post ausente: {target}')
+        if len(description) != 1 or not description[0] or len(description[0]) > 160:
+            raise ValueError(f'Descrição do post ausente ou longa demais: {target}')
         content = [node for node in entry.children
                    if isinstance(node, Element) and node.tag != 'header']
         if not any(node.text() for node in content):
@@ -198,8 +211,8 @@ def check_blog(base, pages, agent_titles):
         if not back_links:
             raise ValueError(f'Retorno aos posts incorreto: {target}')
 
-    if len(art_pages) != 1:
-        raise ValueError(f'Post ilustrado de {language} não encontrado na listagem')
+    if len(art_pages) != sum(lang == language for lang, _ in artwork):
+        raise ValueError(f'Posts ilustrados de {language} ausentes da listagem')
     return art_pages
 
 def check_off_topic(base, pages):
@@ -565,34 +578,43 @@ def check_font(base, pages):
                              f'{page_url} ({sorted(found_weights)})')
 
 def check_theme(base, pages):
-    scripts = set()
+    theme_script = urljoin(base, 'assets/js/theme.js')
     for url, page in pages.items():
         buttons = [node for node in page.root.find('button')
                    if node.attrs.get('id') == 'theme-toggle']
         if len(buttons) != 1 or not (buttons[0].text() or
                                     buttons[0].attrs.get('aria-label')):
             raise ValueError(f'Botão acessível #theme-toggle ausente: {url}')
+        language = one(page.root, 'html').attrs.get('lang')
+        labels = ({
+            'data-theme-current-dark': 'Theme: dark',
+            'data-theme-current-light': 'Theme: light',
+            'data-theme-activate-dark': 'Activate dark mode',
+            'data-theme-activate-light': 'Activate light mode',
+        } if language == 'en' else {
+            'data-theme-current-dark': 'Tema: escuro',
+            'data-theme-current-light': 'Tema: claro',
+            'data-theme-activate-dark': 'Ativar modo escuro',
+            'data-theme-activate-light': 'Ativar modo claro',
+        })
+        if any(buttons[0].attrs.get(key) != value for key, value in labels.items()):
+            raise ValueError(f'Rótulos do tema não correspondem ao idioma: {url}')
         local = [urljoin(url, node.attrs['src']) for node in page.root.find('script')
                  if node.attrs.get('src') and
                  urljoin(url, node.attrs['src']).startswith(base)]
-        if not local:
-            raise ValueError(f'Script local do tema ausente: {url}')
-        scripts.update(local)
+        if local.count(theme_script) != 1:
+            raise ValueError(f'Script local do tema ausente ou duplicado: {url}')
     if not shutil.which('node'):
         raise ValueError('Node.js necessário para testar persistência do tema')
-    failures = []
-    for script in scripts:
-        with urlopen(script, timeout=10) as response:
-            if response.status != 200 or response.headers.get_content_type() not in (
-                    'text/javascript', 'application/javascript'):
-                raise ValueError(f'Script local indisponível: {script}')
-            source = response.read().decode('utf-8')
-        result = subprocess.run(['node', str(Path(__file__).with_name('verify_theme.js'))],
-                                input=source, text=True, capture_output=True, check=False)
-        if not result.returncode:
-            return
-        failures.append(f'{script}: {result.stderr.strip()}')
-    raise ValueError('Nenhum script local inicializa/persiste o tema: ' + '; '.join(failures))
+    with urlopen(theme_script, timeout=10) as response:
+        if response.status != 200 or response.headers.get_content_type() not in (
+                'text/javascript', 'application/javascript'):
+            raise ValueError(f'Script local indisponível: {theme_script}')
+        source = response.read().decode('utf-8')
+    result = subprocess.run(['node', str(Path(__file__).with_name('verify_theme.js'))],
+                            input=source, text=True, capture_output=True, check=False)
+    if result.returncode:
+        raise ValueError(f'Script do tema falhou: {theme_script}: {result.stderr.strip()}')
 
 
 def verify(base):
@@ -630,6 +652,12 @@ def verify(base):
                     raise ValueError('A página deve ter exatamente um h1 e um main')
                 if not page.stylesheets:
                     raise ValueError('Folha de estilos ausente')
+                icons = [node for node in page.root.find('link')
+                         if 'icon' in node.attrs.get('rel', '').split()]
+                if (len(icons) != 1 or icons[0].attrs.get('type') != 'image/svg+xml'
+                        or urljoin(url, icons[0].attrs.get('href', ''))
+                        != urljoin(base, 'assets/images/icon.svg')):
+                    raise ValueError('Favicon local ausente ou incorreto')
                 if any('alt' not in image for image in page.images):
                     raise ValueError('Imagem sem atributo alt')
                 github = [link for link in page.links
@@ -659,13 +687,13 @@ def verify(base):
     if base in pages and not errors:
         try:
             check_localization(base, pages)
-            agent_titles = agent_art_titles()
+            artwork = post_art_by_title(Path(__file__).resolve().parents[2] / '_posts')
             allowed_art_pages = set()
             for locale, language in ((base, 'pt'), (urljoin(base, 'en/'), 'en')):
                 localized = {url: page for url, page in pages.items()
                              if url.startswith(locale)
                              and (language == 'en' or not url.startswith(urljoin(base, 'en/')))}
-                allowed_art_pages.update(check_blog(locale, localized, agent_titles))
+                allowed_art_pages.update(check_blog(locale, localized, artwork))
                 check_off_topic(locale, localized)
                 check_tutorial(locale, localized)
                 check_about(locale, localized, language, base)

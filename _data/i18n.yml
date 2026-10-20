@@ -10,6 +10,10 @@ pt:
   about: Sobre
   github_repo: Repositório do site no GitHub (abre em nova aba)
   theme: Alternar tema
+  theme_current_dark: "Tema: escuro"
+  theme_current_light: "Tema: claro"
+  theme_activate_dark: Ativar modo escuro
+  theme_activate_light: Ativar modo claro
   switch: Ler esta página em inglês
   rss: Assinar o feed RSS
   rss_title: Novos artigos em português
@@ -53,6 +57,10 @@ en:
   about: About
   github_repo: Site repository on GitHub (opens in a new tab)
   theme: Toggle theme
+  theme_current_dark: "Theme: dark"
+  theme_current_light: "Theme: light"
+  theme_activate_dark: Activate dark mode
+  theme_activate_light: Activate light mode
   switch: Read this page in Portuguese
   rss: Subscribe to the RSS feed
   rss_title: New articles in English

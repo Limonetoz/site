@@ -31,6 +31,7 @@ Para publicar, crie `_posts/AAAA-MM-DD-titulo.md`:
 ---
 layout: post
 title: Título do artigo
+description: Resumo editorial do artigo em até 160 caracteres
 lang: pt
 translation_key: AAAA-MM-DD-identificador
 categories:
@@ -41,10 +42,9 @@ permalink: /posts/:year/:month/:day/:title/
 
 Escreva o conteúdo em Markdown abaixo do cabeçalho. As URLs dos artigos
 ficam sob `/posts/`. Para a versão inglesa, crie outro arquivo em `_posts/`
-com a mesma data e `translation_key`, `lang: en`, título e corpo traduzidos,
+com a mesma data e `translation_key`, `lang: en`, título, descrição e corpo traduzidos,
 e `permalink: /en/posts/:year/:month/:day/:title/`. O botão PT/EN leva à
-versão correspondente do artigo; publique as duas versões juntas. A tradução
-do artigo atual foi produzida por um subagente e revisada antes do deploy.
+versão correspondente do artigo; publique as duas versões juntas.
 As páginas de interface compartilham os textos em `_data/i18n.yml`.
 
 O cabeçalho oferece RSS em cada idioma: [`/feed.xml`](https://limonetoz.github.io/site/feed.xml)
@@ -73,6 +73,11 @@ para o tema escuro e `in-logo/LI-In-Bug.png` (SHA-256
 para o tema claro. São usados apenas para identificar o link do perfil.
 As marcas pertencem às respectivas plataformas; esses arquivos não representam
 uma licença de uso das marcas fora deste contexto de identificação de links.
+A ilustração do artigo sobre agentes reaproveita `assets/images/icon.svg` e
+mostra no notebook o símbolo do Hermes Agent. O símbolo foi incorporado de
+`website/static/img/logo-dark.png` do repositório NousResearch/hermes-agent,
+revisão `d923a5eb` (SHA-256 do PNG original:
+`b76ed32dd5ffdf842db696dc6dc0992529acfe12903ec1b2128251a41dfd31d2`).
 O site usa [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) como fonte
 padrão, hospedada localmente em pesos 400, 500 e 700. Os arquivos de fonte
 seguem a licença [SIL Open Font License](assets/fonts/OFL.txt), distribuída

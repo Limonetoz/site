@@ -1,4 +1,3 @@
-/* Fonte local */
 @font-face {
   font-family: "JetBrains Mono";
   src: url("../fonts/JetBrainsMono-Regular.woff2") format("woff2");
@@ -22,8 +21,6 @@
   font-weight: 700;
   font-display: swap;
 }
-
-/* Variáveis */
 
 :root {
   color-scheme: dark;
@@ -76,8 +73,6 @@
   --post-hover-bg: rgba(0, 0, 0, 0.035);
   --primary-hover-bg: #101916;
 }
-
-/* Reset */
 
 * {
   box-sizing: border-box;
@@ -748,6 +743,13 @@ img {
     flex-wrap: wrap;
     gap: 8px 16px;
   }
+
+  .navigation a,
+  .theme-toggle {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+  }
 }
 
 @media (max-width: 900px) {
@@ -760,10 +762,6 @@ img {
     grid-template-columns: 1fr;
     gap: 56px;
     padding-block: 80px;
-  }
-
-  .profile-area {
-    min-height: 380px;
   }
 
   .content {
@@ -782,18 +780,8 @@ img {
 
   .header-container {
     min-height: 64px;
-    flex-wrap: wrap;
     gap: 8px;
     padding-block: 12px;
-  }
-
-  .navigation {
-    width: 100%;
-  }
-
-  .navigation ul {
-    flex-wrap: wrap;
-    gap: 8px 16px;
   }
 
   .section {

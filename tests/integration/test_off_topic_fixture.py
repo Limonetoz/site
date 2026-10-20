@@ -1,5 +1,6 @@
 """Build isolated blog fixtures; assert category filtering and empty state at / and /site."""
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -7,7 +8,7 @@ import tempfile
 from pathlib import Path
 from urllib.parse import urljoin, urlsplit
 
-from verify_jekyll_http import Page, one
+from verify_jekyll_http import Page, one, post_art_by_title
 
 SITE = Path(__file__).resolve().parents[2]
 TOPIC = 'Fixture off-topic exclusiva'
@@ -163,6 +164,33 @@ def main():
                 f'permalink: /en/posts/2020/01/{day}/{slug}/\n---\n\nTest content.\n')
         for prefix in ('', '/site'):
             build_and_check(source, root, prefix, populated=True)
+        originals = {}
+        for article in posts.rglob('*.md'):
+            content = article.read_text()
+            if 'translation_key: 2026-10-19-mudanca' in content:
+                originals[article] = content
+                article.write_text(re.sub(r'^image(?:_alt)?:[^\n]*\n', '', content, flags=re.M))
+        assert len(originals) == 2, 'Fixture deve conter o par ilustrado PT/EN'
+        try:
+            post_art_by_title(posts)
+        except ValueError as error:
+            assert 'Ilustração aprovada ausente' in str(error), str(error)
+        else:
+            raise AssertionError('Remover a ilustração aprovada deve falhar')
+        finally:
+            for article, content in originals.items():
+                article.write_text(content)
+        extra_art = posts / '2020-01-04-unrelated-icon.md'
+        extra_art.write_text(
+            '---\ntitle: Unrelated icon\nlang: pt\ntranslation_key: unrelated\n'
+            'image: /assets/images/icon-agents.svg\nimage_alt: Unrelated\n---\n\nTest.\n')
+        try:
+            post_art_by_title(posts)
+        except ValueError as error:
+            assert 'O ícone dos agentes pertence' in str(error), str(error)
+        else:
+            raise AssertionError('Ícone aprovado não pode aparecer em outro par de artigos')
+        extra_art.unlink()
         shutil.rmtree(posts)  # Only the scratch copy, never the repository's posts.
         for prefix in ('', '/site'):
             build_and_check(source, root, prefix, populated=False)

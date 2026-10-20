@@ -18,6 +18,7 @@
   <meta name="description" content="{{ page.description | default: page.excerpt | strip_html | strip_newlines | escape }}">
   <meta name="theme-color" id="theme-color" content="#050505">
   <title>{% if page.home %}4LagDev // Blog{% else %}{{ page.title | escape }} // 4LagDev{% endif %}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ '/assets/images/icon.svg' | relative_url }}">
   <link rel="canonical" href="{{ page.url | absolute_url | escape }}">
   {% if alternate_url %}
     <link rel="alternate" hreflang="{{ other_language }}" href="{{ alternate_url | absolute_url | escape }}">

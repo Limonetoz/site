@@ -69,7 +69,6 @@ jobs:
     permissions:
       pages: read
     steps:
-      # Uma publicação direta da branch não respeita os testes deste workflow.
       - name: Exigir GitHub Actions como origem do Pages
         env:
           GH_TOKEN: ${{ github.token }}

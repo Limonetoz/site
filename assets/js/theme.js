@@ -24,8 +24,8 @@
     const button = document.getElementById('theme-toggle');
     if (button) {
       button.hidden = false;
-      button.textContent = `Tema: ${theme === 'dark' ? 'escuro' : 'claro'}`;
-      button.setAttribute('aria-label', `Ativar modo ${theme === 'dark' ? 'claro' : 'escuro'}`);
+      button.textContent = button.getAttribute(`data-theme-current-${theme}`);
+      button.setAttribute('aria-label', button.getAttribute(`data-theme-activate-${theme === 'dark' ? 'light' : 'dark'}`));
     }
   }
 

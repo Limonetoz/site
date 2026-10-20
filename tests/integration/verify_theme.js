@@ -1,15 +1,22 @@
-// Execute the published theme script against a minimal browser without network access.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const source = fs.readFileSync(0, 'utf8');
 
-function scenario(systemDark, saved, storageFails = false) {
+function scenario(systemDark, saved, storageFails = false, language = 'pt') {
   const attrs = new Map();
   const handlers = {};
   const storage = new Map(saved ? [['site-theme', saved]] : []);
+  const labels = language === 'en'
+    ? { dark: 'Theme: dark', light: 'Theme: light', toDark: 'Activate dark mode', toLight: 'Activate light mode' }
+    : { dark: 'Tema: escuro', light: 'Tema: claro', toDark: 'Ativar modo escuro', toLight: 'Ativar modo claro' };
   const button = {
-    attrs: {},
+    attrs: {
+      'data-theme-current-dark': labels.dark,
+      'data-theme-current-light': labels.light,
+      'data-theme-activate-dark': labels.toDark,
+      'data-theme-activate-light': labels.toLight,
+    },
     addEventListener(type, callback) { handlers[`button:${type}`] = callback; },
     setAttribute(key, value) { this.attrs[key] = String(value); },
     getAttribute(key) { return this.attrs[key]; },
@@ -73,8 +80,8 @@ function scenario(systemDark, saved, storageFails = false) {
   assert.equal(root.getAttribute('data-theme'), initial,
     `initial theme with systemDark=${systemDark}, saved=${saved}`);
   assert.equal(button.hidden, false, 'toggle must become visible');
-  assert.equal(button.getAttribute('aria-label'),
-    `Ativar modo ${initial === 'dark' ? 'claro' : 'escuro'}`);
+  assert.equal(button.textContent, labels[initial]);
+  assert.equal(button.getAttribute('aria-label'), initial === 'dark' ? labels.toLight : labels.toDark);
   assert.equal(browserColor.attrs.content, initial === 'dark' ? '#050505' : '#f4f3ee');
   media.matches = !systemDark;
   handlers['media:change']();
@@ -87,8 +94,8 @@ function scenario(systemDark, saved, storageFails = false) {
   const next = initial === 'dark' ? 'light' : 'dark';
   assert.equal(root.getAttribute('data-theme'), next, 'click must change root theme');
   if (!storageFails) assert.equal(storage.get('site-theme'), next, 'click must persist preference');
-  assert.equal(button.getAttribute('aria-label'),
-    `Ativar modo ${next === 'dark' ? 'claro' : 'escuro'}`);
+  assert.equal(button.textContent, labels[next]);
+  assert.equal(button.getAttribute('aria-label'), next === 'dark' ? labels.toLight : labels.toDark);
   media.matches = !systemDark;
   handlers['media:change']();
   media.matches = systemDark;
@@ -103,6 +110,8 @@ try {
   scenario(false, 'dark');
   scenario(true, 'light');
   scenario(true, null, true);
+  scenario(true, null, false, 'en');
+  scenario(false, 'dark', false, 'en');
   console.log('PASS preferência do sistema, substituição e persistência');
 } catch (error) {
   console.error(error);
