@@ -308,6 +308,17 @@ img {
   color: var(--gray-dark);
 }
 
+.navigation .language-toggle {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  color: var(--white);
+  background: var(--black-soft);
+}
+
+.navigation .language-toggle::before {
+  display: none;
+}
+
 .navigation a:hover,
 .navigation a:focus-visible,
 .theme-toggle:hover,
@@ -722,6 +733,23 @@ img {
   outline-offset: 5px;
 }
 
+@media (max-width: 1000px) {
+  .header-container {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-block: 12px;
+  }
+
+  .navigation {
+    width: 100%;
+  }
+
+  .navigation ul {
+    flex-wrap: wrap;
+    gap: 8px 16px;
+  }
+}
+
 @media (max-width: 900px) {
   .container {
     width: min(100% - 40px, 720px);
@@ -769,7 +797,7 @@ img {
   }
 
   .section {
-    scroll-margin-top: 120px;
+    scroll-margin-top: 160px;
   }
 
   .logo-name {

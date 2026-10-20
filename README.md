@@ -1,6 +1,6 @@
 # `Code4lag_`
 
-[Posts](https://limonetoz.github.io/site/#posts) · [Tutorial](https://limonetoz.github.io/site/posts/tutorial/) · [Sobre](https://limonetoz.github.io/site/sobre/) · [GitHub](https://github.com/Limonetoz/site)
+[Posts](https://limonetoz.github.io/site/#posts) · [English](https://limonetoz.github.io/site/en/) · [RSS](https://limonetoz.github.io/site/feed.xml) · [Tutorial](https://limonetoz.github.io/site/posts/tutorial/) · [Sobre](https://limonetoz.github.io/site/sobre/) · [GitHub](https://github.com/Limonetoz/site)
 
 ---
 
@@ -31,6 +31,8 @@ Para publicar, crie `_posts/AAAA-MM-DD-titulo.md`:
 ---
 layout: post
 title: Título do artigo
+lang: pt
+translation_key: AAAA-MM-DD-identificador
 categories:
   - Tecnologia
 permalink: /posts/:year/:month/:day/:title/
@@ -38,7 +40,17 @@ permalink: /posts/:year/:month/:day/:title/
 ```
 
 Escreva o conteúdo em Markdown abaixo do cabeçalho. As URLs dos artigos
-ficam sob `/posts/`.
+ficam sob `/posts/`. Para a versão inglesa, crie outro arquivo em `_posts/`
+com a mesma data e `translation_key`, `lang: en`, título e corpo traduzidos,
+e `permalink: /en/posts/:year/:month/:day/:title/`. O botão PT/EN leva à
+versão correspondente do artigo; publique as duas versões juntas. A tradução
+do artigo atual foi produzida por um subagente e revisada antes do deploy.
+As páginas de interface compartilham os textos em `_data/i18n.yml`.
+
+O cabeçalho oferece RSS em cada idioma: [`/feed.xml`](https://limonetoz.github.io/site/feed.xml)
+para português e [`/en/feed.xml`](https://limonetoz.github.io/site/en/feed.xml)
+para inglês. Assine o endereço desejado em um leitor RSS que ofereça alertas;
+o feed publica novos artigos, mas o site não envia notificações push por conta própria.
 
 Para incluir um artigo na subcategoria **Off-topic**, use
 `categories: [off-topic]` no cabeçalho. A página
@@ -71,6 +83,7 @@ junto deles.
 ```text
 site/
 ├── .github/workflows/pages.yml   # Build, testes e deploy
+├── _data/i18n.yml              # Textos de interface PT/EN
 ├── _includes/                   # Componentes compartilhados
 │   ├── header.html
 │   └── footer.html
@@ -81,6 +94,8 @@ site/
 ├── posts/off-topic/index.html   # Arquivo da subcategoria Off-topic
 ├── posts/tutorial/index.html    # Arquivo da categoria Tutorial
 ├── sobre/index.html             # Página de perfis e links
+├── en/                          # Páginas e feed em inglês
+├── feed.xml                     # RSS em português
 ├── assets/
 │   ├── css/style.css            # Estilos do site
 │   ├── js/theme.js              # Alternância de tema
@@ -131,6 +146,8 @@ As verificações cobrem:
 - CSS, mascote e demais arquivos vinculados acessíveis por HTTP.
 - Arquivos Off-topic e Tutorial filtrados e com estado vazio; tema persistido.
 - Página Sobre, três perfis com ícones locais e JetBrains Mono, também em `/site`.
+- Páginas e posts PT/EN com alternância recíproca e arquivos separados por idioma.
+- Feeds RSS 2.0 por idioma, XML válido, metadados e itens correspondentes aos posts.
 
 [Instruções completas dos testes →](tests/README.md)
 

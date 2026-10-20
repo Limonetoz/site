@@ -1,27 +1,32 @@
+{% assign language = page.lang | default: 'pt' %}
+{% assign t = site.data.i18n[language] %}
+{% assign language_prefix = '' %}
+{% assign language_home = '/' %}
+{% if language == 'en' %}
+  {% assign language_prefix = '/en' %}
+  {% assign language_home = '/en/' %}
+{% endif %}
 <header class="header">
   <div class="header-container container">
-    <a class="logo" href="{% if page.home %}#inicio{% else %}{{ '/' | relative_url }}{% endif %}" aria-label="Voltar ao início">
+    <a class="logo" href="{% if page.home %}#inicio{% else %}{{ language_home | relative_url }}{% endif %}" aria-label="{{ t.back_home | escape }}">
       <span class="logo-mark" aria-hidden="true"></span>
       <span class="logo-name">Code4lag_</span>
     </a>
 
-    <nav class="navigation" aria-label="Navegação principal">
+    <nav class="navigation" aria-label="{{ t.nav_label | escape }}">
       <ul>
+        <li><a href="{% unless page.home %}{{ language_home | relative_url }}{% endunless %}#posts">{{ t.posts | escape }}</a></li>
+        <li><a href="{{ language_prefix | append: '/posts/tutorial/' | relative_url }}">{{ t.tutorial | escape }}</a></li>
+        <li><a href="{{ language_prefix | append: '/posts/off-topic/' | relative_url }}">{{ t.off_topic | escape }}</a></li>
+        <li><a href="{{ language_prefix | append: '/sobre/' | relative_url }}">{{ t.about | escape }}</a></li>
         <li>
-          <a href="{% unless page.home %}{{ '/' | relative_url }}{% endunless %}#posts">Posts</a>
+          <a href="https://github.com/Limonetoz/site" target="_blank" rel="noopener noreferrer" aria-label="{{ t.github_repo | escape }}">GitHub</a>
         </li>
-        <li><a href="{{ '/posts/tutorial/' | relative_url }}">Tutorial</a></li>
-        <li><a href="{{ '/posts/off-topic/' | relative_url }}">Off-topic</a></li>
-        <li><a href="{{ '/sobre/' | relative_url }}">Sobre</a></li>
-        <li>
-          <a
-            href="https://github.com/Limonetoz/site"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Repositório do site no GitHub (abre em nova aba)"
-          >GitHub</a>
-        </li>
-        <li><button type="button" id="theme-toggle" class="theme-toggle" hidden>Alternar tema</button></li>
+        <li><a href="{{ feed_url | relative_url }}" aria-label="{{ t.rss | escape }}">RSS</a></li>
+        {% if alternate_url %}
+          <li><a class="language-toggle" href="{{ alternate_url | relative_url }}" hreflang="{{ other_language }}" lang="{{ other_language }}" aria-label="{{ t.switch | escape }}">{{ other_language | upcase }}</a></li>
+        {% endif %}
+        <li><button type="button" id="theme-toggle" class="theme-toggle" hidden>{{ t.theme | escape }}</button></li>
       </ul>
     </nav>
   </div>

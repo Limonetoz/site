@@ -1,0 +1,7 @@
+---
+layout: null
+lang: pt
+permalink: /feed.xml
+---
+<?xml version="1.0" encoding="UTF-8"?>
+{% include rss-channel.xml %}

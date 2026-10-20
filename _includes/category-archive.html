@@ -1,0 +1,35 @@
+{% assign language = page.lang | default: 'pt' %}
+{% assign t = site.data.i18n[language] %}
+{% assign language_home = '/' %}
+{% if language == 'en' %}{% assign language_home = '/en/' %}{% endif %}
+{% assign category_posts = site.categories[page.category] | where: 'lang', language %}
+<main class="post-page container" id="conteudo">
+  <a class="post-back" href="{{ language_home | relative_url }}#posts">{{ t.back_posts | escape }}</a>
+  <section class="section" aria-labelledby="archive-title">
+    <header class="section-heading">
+      <div>
+        <span class="section-index">{{ t.archive_index | escape }}</span>
+        <h1 id="archive-title">{{ page.title | escape }}</h1>
+      </div>
+      <p>{% if page.category == 'tutorial' %}{{ t.tutorial_description | escape }}{% else %}{{ t.off_topic_description | escape }}{% endif %}</p>
+    </header>
+    <div class="posts-list">
+      {% for post in category_posts %}
+        <article class="post">
+          <div class="post-symbol" aria-hidden="true">&gt;</div>
+          <div class="post-content">
+            <span class="post-category">{{ page.title | escape }}</span>
+            <h2><a href="{{ post.url | relative_url }}">{{ post.title | escape }}</a></h2>
+            <p>{{ post.excerpt | strip_html | strip_newlines | truncate: 160 | escape }}</p>
+          </div>
+          <div class="post-meta">
+            <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%d.%m.%Y" }}</time>
+            <a class="post-link" href="{{ post.url | relative_url }}">{{ t.open | escape }} <span aria-hidden="true">→</span></a>
+          </div>
+        </article>
+      {% else %}
+        <p class="posts-empty">{% if page.category == 'tutorial' %}{{ t.tutorial_empty | escape }}{% else %}{{ t.off_topic_empty | escape }}{% endif %}</p>
+      {% endfor %}
+    </div>
+  </section>
+</main>

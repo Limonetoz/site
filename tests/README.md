@@ -25,6 +25,12 @@
   Codeberg e LinkedIn), seguros e acessíveis, com ícones locais SVG e PNG por HTTP;
 - JetBrains Mono como fonte primária no CSS, definida em `@font-face` por
   arquivo WOFF2 local servido por HTTP em `/` e `/site`.
+- `/en/`, `/en/sobre/`, arquivos `/en/posts/…/` e posts em inglês com
+  `html lang` correto, títulos/conteúdo localizados e switch PT/EN no cabeçalho
+  apontando de volta à página equivalente (inclusive artigo);
+- feeds RSS 2.0 `/feed.xml` e `/en/feed.xml`, descobertos por `<link>` em cada
+  página e acessíveis no cabeçalho: HTTP/MIME/XML, idioma, metadados e itens
+  idênticos aos posts da listagem de cada idioma, sem vazamento entre idiomas.
 
 As comparações usam os próprios cards renderizados, sem fixar título, data, URL
 ou frases de uma publicação. Um blog sem posts é válido se mostrar o estado
@@ -83,8 +89,9 @@ isolada (requer Jekyll, Node.js e `TMPDIR`):
 nix-shell --run 'python3 tests/integration/test_off_topic_fixture.py'
 ```
 
-Ela copia o código-fonte para `$TMPDIR`, adiciona posts `off-topic`, `tutorial`
-e `estudos` com datas passadas, compila e testa tanto `/` quanto `/site/`.
+Ela copia o código-fonte para `$TMPDIR`, adiciona posts PT/EN correspondentes
+`off-topic`, `tutorial` e `estudos` com datas passadas, compila e testa tanto
+`/` quanto `/site/`, inclusive arquivos e feeds de cada idioma.
 Depois remove somente os posts da cópia, recompila e verifica o estado vazio;
 também executa as verificações HTTP/alt/links e o teste do script de tema.
 Não cria nem altera posts no repositório.

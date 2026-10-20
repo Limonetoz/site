@@ -8,6 +8,7 @@ import sys
 import xml.etree.ElementTree as ET
 from collections import deque
 from datetime import datetime
+from email.utils import parsedate_to_datetime
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urldefrag, urljoin, urlsplit
@@ -165,6 +166,8 @@ def check_off_topic(base, pages):
     archive = urljoin(base, 'posts/off-topic/')
     home = pages[base]
     for url, page in pages.items():
+        if not url.startswith(base):
+            continue
         if not any(urljoin(url, link.attrs.get('href', '')) == archive
                    and 'off-topic' in link.text().lower()
                    for nav in page.root.find('nav') for link in nav.find('a')):
@@ -204,6 +207,8 @@ def check_off_topic(base, pages):
 def check_tutorial(base, pages):
     archive = urljoin(base, 'posts/tutorial/')
     for url, page in pages.items():
+        if not url.startswith(base):
+            continue
         links = [link for nav in page.root.find('nav') for link in nav.find('a')
                  if link.text().strip().lower() == 'tutorial']
         if len(links) != 1 or urljoin(url, links[0].attrs.get('href', '')) != archive:
@@ -238,11 +243,15 @@ def check_tutorial(base, pages):
         raise ValueError(f'Arquivo Tutorial não corresponde aos posts categorizados: '
                          f'esperados {sorted(home_targets)}, encontrados {sorted(seen)}')
 
-def check_about(base, pages):
+def check_about(base, pages, language='pt', site_base=None):
+    site_base = site_base or base
     about_url = urljoin(base, 'sobre/')
+    label = 'sobre' if language == 'pt' else 'about'
     for url, page in pages.items():
+        if not url.startswith(base):
+            continue
         links = [link for nav in page.root.find('nav') for link in nav.find('a')
-                 if link.text().strip().lower() == 'sobre']
+                 if link.text().strip().lower() == label]
         if len(links) != 1 or urljoin(url, links[0].attrs.get('href', '')) != about_url:
             raise ValueError(f'Navegação Sobre fora do baseurl: {url}')
     if about_url not in pages:
@@ -293,7 +302,7 @@ def check_about(base, pages):
             extension = '.png' if is_linkedin else '.svg'
             if (not parsed.path.lower().endswith(extension) or
                     (parsed.scheme, parsed.netloc) != (urlsplit(base).scheme, urlsplit(base).netloc)
-                    or not parsed.path.startswith(urlsplit(base).path)):
+                    or not parsed.path.startswith(urlsplit(urljoin(site_base, 'assets/images/')).path)):
                 raise ValueError(f'Ícone local inválido: {src}')
             if 'alt' not in icon.attrs and icon.attrs.get('aria-hidden') != 'true':
                 raise ValueError(f'Ícone sem alt ou aria-hidden: {src}')
@@ -311,6 +320,165 @@ def check_about(base, pages):
                             raise ValueError(f'Ícone SVG sem conteúdo SVG: {src}')
                     except ET.ParseError as error:
                         raise ValueError(f'Ícone SVG inválido: {src}: {error}') from error
+
+def home_posts(base, pages):
+    section = [node for node in pages[base].root.find('section')
+               if node.attrs.get('id') == 'posts']
+    if len(section) != 1:
+        raise ValueError(f'Seção #posts ausente: {base}')
+    result = {}
+    for card in section[0].find('article'):
+        headings = [node for node in card.find() if node.tag in ('h2', 'h3', 'h4')]
+        if len(headings) != 1:
+            raise ValueError(f'Card sem título único: {base}')
+        url = urljoin(base, one(headings[0], 'a').attrs['href'])
+        result[url] = (headings[0].text(), one(card, 'time').attrs['datetime'],
+                       one(card, 'span', 'post-category').text())
+    return result
+
+
+def check_localization(base, pages):
+    english = urljoin(base, 'en/')
+    if english not in pages:
+        raise ValueError(f'Página inicial EN não renderizada: {english}')
+    static = {base: english,
+              urljoin(base, 'sobre/'): urljoin(english, 'sobre/'),
+              urljoin(base, 'posts/tutorial/'): urljoin(english, 'posts/tutorial/'),
+              urljoin(base, 'posts/off-topic/'): urljoin(english, 'posts/off-topic/')}
+    counterparts = dict(static)
+    pt_posts = home_posts(base, pages)
+    en_posts = home_posts(english, pages)
+    for url in pt_posts:
+        if url.startswith(english):
+            raise ValueError(f'Post em inglês vazou para página PT: {url}')
+        if url not in pages:
+            raise ValueError(f'Post PT não renderizado: {url}')
+        switches = [link for header in pages[url].root.find('header')
+                    for link in header.find('a') if link.text().strip().upper() == 'EN']
+        if len(switches) != 1:
+            raise ValueError(f'Post PT sem switch EN: {url}')
+        counterpart = urljoin(url, switches[0].attrs.get('href', ''))
+        if counterpart not in en_posts:
+            raise ValueError(f'Switch EN não leva ao post traduzido: {url} -> {counterpart}')
+        if pt_posts[url][0] == en_posts[counterpart][0]:
+            raise ValueError(f'Título do post não foi traduzido: {url}')
+        pt_body = one(one(pages[url].root, 'main'), 'div', 'post-entry-content').text()
+        en_body = one(one(pages[counterpart].root, 'main'), 'div', 'post-entry-content').text()
+        if not pt_body or not en_body or pt_body == en_body:
+            raise ValueError(f'Corpo do post traduzido ausente ou idêntico ao original: {url}')
+        counterparts[url] = counterpart
+    if set(en_posts) != set(counterparts.values()) - set(static.values()):
+        raise ValueError('Listagens PT/EN não contêm exatamente os posts correspondentes')
+    for url, counterpart in counterparts.items():
+        for current, other, language, switch_label in (
+                (url, counterpart, 'pt', 'EN'),
+                (counterpart, url, 'en', 'PT')):
+            if current not in pages:
+                raise ValueError(f'Página localizada não renderizada: {current}')
+            html = one(pages[current].root, 'html')
+            if html.attrs.get('lang', '').split('-')[0].lower() != language:
+                raise ValueError(f'Idioma HTML incorreto: {current}')
+            switches = [link for header in pages[current].root.find('header')
+                        for link in header.find('a')
+                        if link.text().strip().upper() == switch_label]
+            if len(switches) != 1 or urljoin(current, switches[0].attrs.get('href', '')) != other:
+                raise ValueError(f'Switch {switch_label} não é recíproco: {current}')
+    for url in en_posts:
+        if not url.startswith(english):
+            raise ValueError(f'Post PT vazou para página EN: {url}')
+    if one(pages[base].root, 'p', 'description').text() == one(
+            pages[english].root, 'p', 'description').text():
+        raise ValueError(f'Descrição inicial não foi localizada: {english}')
+    about_pt = urljoin(base, 'sobre/')
+    about_en = counterparts[about_pt]
+    if one(one(pages[about_pt].root, 'main'), 'h1').text() == one(
+            one(pages[about_en].root, 'main'), 'h1').text():
+        raise ValueError(f'Título principal não foi localizado: {about_en}')
+
+
+def configured_public_origin():
+    config = (Path(__file__).resolve().parents[2] / '_config.yml').read_text()
+    for line in config.splitlines():
+        if line.startswith('url:'):
+            value = line.partition(':')[2].strip().strip('"\'')
+            parsed = urlsplit(value)
+            if parsed.scheme == 'https' and parsed.netloc and not parsed.path.strip('/'):
+                return parsed.scheme, parsed.netloc
+    raise ValueError('Configure a origem HTTPS em _config.yml para os feeds RSS')
+
+
+def published_feed_url(feed_url, value):
+    """Map a canonical public RSS URL onto the local build's HTTP origin."""
+    parsed = urlsplit(value)
+    expected_scheme, expected_host = configured_public_origin()
+    if (parsed.scheme != expected_scheme or parsed.netloc != expected_host
+            or parsed.query or parsed.fragment):
+        raise ValueError(f'RSS sem URL pública absoluta: {value}')
+    local = urlsplit(feed_url)
+    return f'{local.scheme}://{local.netloc}{parsed.path}'
+
+
+def check_feeds(base, pages):
+    english = urljoin(base, 'en/')
+    for language, home, feed_path in (('pt', base, 'feed.xml'),
+                                      ('en', english, 'en/feed.xml')):
+        feed_url = urljoin(base, feed_path)
+        posts = home_posts(home, pages)
+        for page_url, page in pages.items():
+            if page_url.startswith(english) != (language == 'en'):
+                continue
+            discovery = [node for node in page.root.find('link')
+                         if 'alternate' in node.attrs.get('rel', '').split()
+                         and node.attrs.get('type') == 'application/rss+xml']
+            if len(discovery) != 1 or urljoin(page_url, discovery[0].attrs.get('href', '')) != feed_url:
+                raise ValueError(f'RSS autodiscovery incorreto: {page_url}')
+            header_links = [node for header in page.root.find('header')
+                            for node in header.find('a')
+                            if urljoin(page_url, node.attrs.get('href', '')) == feed_url]
+            if len(header_links) != 1 or not (header_links[0].text() or header_links[0].attrs.get('aria-label')):
+                raise ValueError(f'Link RSS acessível ausente no cabeçalho: {page_url}')
+        with urlopen(feed_url, timeout=10) as response:
+            if response.status != 200 or response.headers.get_content_type() not in (
+                    'application/rss+xml', 'application/xml', 'text/xml'):
+                raise ValueError(f'RSS indisponível ou tipo incorreto: {feed_url}')
+            try:
+                rss = ET.fromstring(response.read())
+            except ET.ParseError as error:
+                raise ValueError(f'RSS inválido: {feed_url}: {error}') from error
+        if rss.tag != 'rss' or rss.get('version') != '2.0':
+            raise ValueError(f'Feed não é RSS 2.0: {feed_url}')
+        channel = rss.find('channel')
+        if channel is None or not channel.findtext('title') or not channel.findtext('description'):
+            raise ValueError(f'Canal RSS sem título ou descrição: {feed_url}')
+        if channel.findtext('language', '').lower().split('-')[0] != language:
+            raise ValueError(f'Idioma RSS incorreto: {feed_url}')
+        if published_feed_url(feed_url, channel.findtext('link', '')) != home:
+            raise ValueError(f'Link do canal RSS incorreto: {feed_url}')
+        entries = {}
+        for item in channel.findall('item'):
+            link = published_feed_url(feed_url, item.findtext('link', ''))
+            if link in entries or link not in posts:
+                raise ValueError(f'Item RSS repetido ou de outro idioma: {link}')
+            title, timestamp, category = posts[link]
+            if item.findtext('title') != title or not item.findtext('description'):
+                raise ValueError(f'Item RSS sem título/resumo do card: {link}')
+            if not item.findtext('guid') or not item.findtext('category') or not item.findtext('pubDate'):
+                raise ValueError(f'Item RSS sem GUID/categoria/data: {link}')
+            if item.findtext('guid') != item.findtext('link'):
+                raise ValueError(f'GUID RSS não corresponde ao link permanente: {link}')
+            if item.findtext('category') not in category.split(' // '):
+                raise ValueError(f'Categoria RSS diferente do card: {link}')
+            try:
+                published = parsedate_to_datetime(item.findtext('pubDate', ''))
+                if not published or published.date() != datetime.fromisoformat(timestamp).date():
+                    raise ValueError('Data RSS diferente do card')
+            except (TypeError, ValueError) as error:
+                raise ValueError(f'Data RSS inválida: {link}: {error}') from error
+            entries[link] = item
+        if set(entries) != set(posts):
+            raise ValueError(f'Itens RSS não correspondem aos posts {language}: '
+                             f'esperados {sorted(posts)}, encontrados {sorted(entries)}')
+
 
 def check_font(base, pages):
     for page_url, page in pages.items():
@@ -450,10 +618,16 @@ def verify(base):
             errors.append(f'Âncora inexistente: {target}#{fragment}')
     if base in pages and not errors:
         try:
-            check_blog(base, pages)
-            check_off_topic(base, pages)
-            check_tutorial(base, pages)
-            check_about(base, pages)
+            check_localization(base, pages)
+            for locale, language in ((base, 'pt'), (urljoin(base, 'en/'), 'en')):
+                localized = {url: page for url, page in pages.items()
+                             if url.startswith(locale)
+                             and (language == 'en' or not url.startswith(urljoin(base, 'en/')))}
+                check_blog(locale, localized)
+                check_off_topic(locale, localized)
+                check_tutorial(locale, localized)
+                check_about(locale, localized, language, base)
+            check_feeds(base, pages)
             check_font(base, pages)
             check_theme(base, pages)
         except ValueError as error:

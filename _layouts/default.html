@@ -1,16 +1,33 @@
+{% assign language = page.lang | default: 'pt' %}
+{% assign t = site.data.i18n[language] %}
+{% assign other_language = 'en' %}
+{% if language == 'en' %}{% assign other_language = 'pt' %}{% endif %}
+{% assign alternate_url = page.alternate_url %}
+{% if page.translation_key %}
+  {% assign related_posts = site.posts | where: 'translation_key', page.translation_key %}
+  {% assign counterpart = related_posts | where: 'lang', other_language | first %}
+  {% if counterpart %}{% assign alternate_url = counterpart.url %}{% endif %}
+{% endif %}
+{% assign feed_url = '/feed.xml' %}
+{% if language == 'en' %}{% assign feed_url = '/en/feed.xml' %}{% endif %}
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="{{ t.html_lang }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="{{ page.description | default: page.excerpt | strip_html | strip_newlines | escape }}">
   <meta name="theme-color" id="theme-color" content="#050505">
   <title>{% if page.home %}4LagDev // Blog{% else %}{{ page.title | escape }} // 4LagDev{% endif %}</title>
+  <link rel="canonical" href="{{ page.url | absolute_url | escape }}">
+  {% if alternate_url %}
+    <link rel="alternate" hreflang="{{ other_language }}" href="{{ alternate_url | absolute_url | escape }}">
+  {% endif %}
+  <link rel="alternate" type="application/rss+xml" title="{{ t.rss_title | escape }}" href="{{ feed_url | relative_url }}">
   <script src="{{ '/assets/js/theme.js' | relative_url }}"></script>
   <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
 </head>
 <body>
-  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+  <a class="skip-link" href="#conteudo">{{ t.skip | escape }}</a>
   {% if page.home %}
     <div class="background" aria-hidden="true">
       <span class="shape shape-square"></span>

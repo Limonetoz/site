@@ -1,8 +1,10 @@
+{% assign footer_home = '/' %}
+{% if page.lang == 'en' %}{% assign footer_home = '/en/' %}{% endif %}
 <footer class="footer">
   <div class="footer-container container">
-    <p>© 2026 4LagDev // Site estático</p>
-    <nav class="footer-links" aria-label="Links secundários">
-      <a href="{% if page.home %}#inicio{% else %}{{ '/' | relative_url }}{% endif %}">Início</a>
+    <p>© 2026 4LagDev // {{ t.footer | escape }}</p>
+    <nav class="footer-links" aria-label="{{ t.secondary_nav | escape }}">
+      <a href="{% if page.home %}#inicio{% else %}{{ footer_home | relative_url }}{% endif %}">{% if page.lang == 'en' %}Home{% else %}Início{% endif %}</a>
     </nav>
   </div>
 </footer>

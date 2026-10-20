@@ -1,0 +1,36 @@
+{% assign language = page.lang | default: 'pt' %}
+{% assign t = site.data.i18n[language] %}
+{% assign language_home = '/' %}
+{% if language == 'en' %}{% assign language_home = '/en/' %}{% endif %}
+<main class="about-page container" id="conteudo">
+  <div class="about-content">
+    <span class="section-index">{{ t.about_index | escape }}</span>
+    <div class="about-avatar">
+      <img src="{{ '/assets/images/icon.svg' | relative_url }}" alt="" width="88" height="88">
+    </div>
+    <h1>{{ t.about | escape }}</h1>
+    <p class="about-handle">Code4lag_</p>
+    <p class="about-description">{{ t.about_description | escape }}</p>
+
+    <nav class="about-links" aria-label="{{ t.about_profiles | escape }}">
+      <a href="https://github.com/Limonetoz/" target="_blank" rel="noopener noreferrer" aria-label="{{ t.github_profile | escape }}">
+        <img class="about-icon about-icon-github" src="{{ '/assets/images/github-mark.svg' | relative_url }}" alt="" width="28" height="28">
+        <span class="about-link-label">GitHub <small>@Limonetoz</small></span>
+        <span class="about-link-arrow" aria-hidden="true">↗</span>
+      </a>
+      <a href="https://codeberg.org/Code4lag" target="_blank" rel="noopener noreferrer" aria-label="{{ t.codeberg_profile | escape }}">
+        <img class="about-icon" src="{{ '/assets/images/codeberg-logo.svg' | relative_url }}" alt="" width="28" height="28">
+        <span class="about-link-label">Codeberg <small>@Code4lag</small></span>
+        <span class="about-link-arrow" aria-hidden="true">↗</span>
+      </a>
+      <a href="https://www.linkedin.com/in/gabriel-lima-6735452b9/" target="_blank" rel="noopener noreferrer" aria-label="{{ t.linkedin_profile | escape }}">
+        <img class="about-icon about-icon-linkedin-dark" src="{{ '/assets/images/linkedin-in-white.png' | relative_url }}" alt="" width="28" height="28">
+        <img class="about-icon about-icon-linkedin-light" src="{{ '/assets/images/linkedin-in.png' | relative_url }}" alt="" width="28" height="28">
+        <span class="about-link-label">LinkedIn <small>Gabriel Lima</small></span>
+        <span class="about-link-arrow" aria-hidden="true">↗</span>
+      </a>
+    </nav>
+
+    <a class="about-home" href="{{ language_home | relative_url }}">{{ t.about_back | escape }}</a>
+  </div>
+</main>

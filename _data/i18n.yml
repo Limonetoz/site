@@ -1,0 +1,87 @@
+pt:
+  html_lang: pt-BR
+  nav_label: Navegação principal
+  secondary_nav: Links secundários
+  back_home: Voltar ao início
+  skip: Pular para o conteúdo
+  posts: Posts
+  tutorial: Tutorial
+  off_topic: Off-topic
+  about: Sobre
+  github_repo: Repositório do site no GitHub (abre em nova aba)
+  theme: Alternar tema
+  switch: Ler esta página em inglês
+  rss: Assinar o feed RSS
+  rss_title: Novos artigos em português
+  footer: Site estático
+  home_top: Um arquivo pessoal sobre estudos e artigos
+  home_intro: Um histórico do que ando trabalhando.
+  developer: Desenvolvedor
+  explore: Explorar posts
+  recent: 01 // arquivos recentes
+  recent_description: Publicações recentes.
+  empty_posts: Nenhum post publicado ainda. Adicione arquivos em
+  open: Abrir
+  back_posts: ← Voltar aos posts
+  archive_index: 02 // arquivo
+  tutorial_description: Guias e tutoriais do blog.
+  off_topic_description: Textos fora dos temas habituais.
+  tutorial_empty: Nenhum tutorial publicado ainda.
+  off_topic_empty: Nenhum post Off-topic publicado ainda.
+  about_index: 03 // onde me encontrar
+  about_description: "Um arquivo pessoal sobre estudos, tecnologia e projetos. Meus perfis estão aqui:"
+  about_profiles: Perfis
+  github_profile: GitHub, perfil @Limonetoz (abre em nova aba)
+  codeberg_profile: Codeberg, perfil @Code4lag (abre em nova aba)
+  linkedin_profile: LinkedIn, perfil de Gabriel Lima (abre em nova aba)
+  about_back: ← Voltar ao blog
+  rss_description: Artigos do 4LagDev em português.
+  categories:
+    Tecnologia: Tecnologia
+    estudos: estudos
+    tutorial: tutorial
+    off-topic: off-topic
+en:
+  html_lang: en
+  nav_label: Main navigation
+  secondary_nav: Secondary links
+  back_home: Back to home
+  skip: Skip to content
+  posts: Posts
+  tutorial: Tutorial
+  off_topic: Off-topic
+  about: About
+  github_repo: Site repository on GitHub (opens in a new tab)
+  theme: Toggle theme
+  switch: Read this page in Portuguese
+  rss: Subscribe to the RSS feed
+  rss_title: New articles in English
+  footer: Static site
+  home_top: A personal archive of studies and articles
+  home_intro: A record of what I've been working on.
+  developer: Developer
+  explore: Explore posts
+  recent: 01 // recent posts
+  recent_description: Recent writing.
+  empty_posts: No posts published yet. Add files under
+  open: Open
+  back_posts: ← Back to posts
+  archive_index: 02 // archive
+  tutorial_description: Guides and tutorials from the blog.
+  off_topic_description: Writing beyond the usual topics.
+  tutorial_empty: No tutorials published yet.
+  off_topic_empty: No Off-topic posts published yet.
+  about_index: 03 // where to find me
+  about_description: "A personal archive of studies, technology and projects. You can find me here:"
+  about_profiles: Profiles
+  github_profile: GitHub, @Limonetoz profile (opens in a new tab)
+  codeberg_profile: Codeberg, @Code4lag profile (opens in a new tab)
+  linkedin_profile: LinkedIn, Gabriel Lima's profile (opens in a new tab)
+  about_back: ← Back to the blog
+  rss_description: 4LagDev articles in English.
+  categories:
+    Tecnologia: Technology
+    estudos: Studies
+    studies: Studies
+    tutorial: Tutorial
+    off-topic: Off-topic
