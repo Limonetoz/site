@@ -1,9 +1,11 @@
 """Validate generated pages and their local links through HTTP."""
 
 import argparse
+import re
 import shutil
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
 from collections import deque
 from datetime import datetime
 from html.parser import HTMLParser
@@ -199,6 +201,43 @@ def check_off_topic(base, pages):
         raise ValueError(f'Arquivo Off-topic não corresponde aos posts categorizados: '
                          f'esperados {sorted(home_targets)}, encontrados {sorted(seen)}')
 
+def check_tutorial(base, pages):
+    archive = urljoin(base, 'posts/tutorial/')
+    for url, page in pages.items():
+        links = [link for nav in page.root.find('nav') for link in nav.find('a')
+                 if link.text().strip().lower() == 'tutorial']
+        if len(links) != 1 or urljoin(url, links[0].attrs.get('href', '')) != archive:
+            raise ValueError(f'Navegação Tutorial fora do baseurl: {url}')
+    if archive not in pages:
+        raise ValueError(f'Arquivo Tutorial não renderizado: {archive}')
+    main = one(pages[archive].root, 'main')
+    cards = list(main.find('article'))
+    if not cards and not any(node.text() for node in main.find('p', 'posts-empty')):
+        raise ValueError('Arquivo Tutorial sem posts e sem estado vazio visível')
+    home_posts = [section for section in pages[base].root.find('section')
+                  if section.attrs.get('id') == 'posts']
+    if len(home_posts) != 1:
+        raise ValueError('Seção de posts da página inicial ausente')
+    home_targets = {
+        urljoin(base, one(heading, 'a').attrs['href'])
+        for card in home_posts[0].find('article')
+        if any(part.strip().lower() == 'tutorial'
+               for part in one(card, 'span', 'post-category').text().split('//'))
+        for heading in card.find() if heading.tag in ('h2', 'h3', 'h4')
+    }
+    seen = set()
+    for card in cards:
+        headings = [node for node in card.find() if node.tag in ('h2', 'h3', 'h4')]
+        if len(headings) != 1:
+            raise ValueError('Card Tutorial sem título único')
+        target = urljoin(archive, one(headings[0], 'a').attrs.get('href', ''))
+        if target not in home_targets or target in seen or target not in pages:
+            raise ValueError(f'Post Tutorial inválido ou repetido: {target}')
+        seen.add(target)
+    if seen != home_targets:
+        raise ValueError(f'Arquivo Tutorial não corresponde aos posts categorizados: '
+                         f'esperados {sorted(home_targets)}, encontrados {sorted(seen)}')
+
 def check_about(base, pages):
     about_url = urljoin(base, 'sobre/')
     for url, page in pages.items():
@@ -220,32 +259,102 @@ def check_about(base, pages):
     if not home_styles.intersection(about_styles):
         raise ValueError('Página Sobre não usa a folha de estilos compartilhada')
 
-    profiles = {'https://github.com/Limonetoz/', 'https://codeberg.org/Code4lag'}
+    profiles = {'https://github.com/Limonetoz/', 'https://codeberg.org/Code4lag',
+                'https://www.linkedin.com/in/gabriel-lima-6735452b9/'}
     external = [link for link in main.find('a')
                 if urlsplit(link.attrs.get('href', '')).scheme in ('http', 'https')]
-    if len(external) != 2 or {link.attrs['href'] for link in external} != profiles:
-        raise ValueError('Página Sobre deve conter exatamente os dois links de perfil')
+    if len(external) != 3 or {link.attrs['href'] for link in external} != profiles:
+        raise ValueError('Página Sobre deve conter exatamente os três links de perfil')
     for link in external:
         if not link.text():
             raise ValueError(f'Link de perfil sem texto acessível: {link.attrs["href"]}')
-        if (link.attrs.get('target') == '_blank' and
-                'noopener' not in link.attrs.get('rel', '').split()):
+        accessible_name = link.attrs.get('aria-label') or link.text()
+        if 'linkedin.com' in link.attrs['href'] and 'linkedin' not in accessible_name.lower():
+            raise ValueError('Link LinkedIn sem nome acessível da plataforma')
+        if (link.attrs.get('target') != '_blank' or
+                not {'noopener', 'noreferrer'} <= set(link.attrs.get('rel', '').split())):
             raise ValueError(f'Link de perfil em nova aba sem proteção: {link.attrs["href"]}')
         icons = list(link.find('img'))
-        if len(icons) != 1:
-            raise ValueError(f'Link de perfil sem ícone SVG: {link.attrs["href"]}')
-        icon = icons[0]
-        src = icon.attrs.get('src', '')
-        parsed = urlsplit(urljoin(about_url, src))
-        if (not parsed.path.lower().endswith('.svg') or
-                (parsed.scheme, parsed.netloc) != (urlsplit(base).scheme, urlsplit(base).netloc)
-                or not parsed.path.startswith(urlsplit(base).path)):
-            raise ValueError(f'Ícone SVG local inválido: {src}')
-        if 'alt' not in icon.attrs and icon.attrs.get('aria-hidden') != 'true':
-            raise ValueError(f'Ícone SVG sem alt ou aria-hidden: {src}')
-        with urlopen(urljoin(about_url, src), timeout=10) as response:
-            if response.status != 200 or response.headers.get_content_type() != 'image/svg+xml':
-                raise ValueError(f'Ícone SVG não carregado: {src}')
+        is_linkedin = 'linkedin.com' in link.attrs['href']
+        if len(icons) != (2 if is_linkedin else 1):
+            raise ValueError(f'Quantidade de ícones incorreta: {link.attrs["href"]}')
+        if is_linkedin:
+            classes = {tuple(icon.attrs.get('class', '').split()) for icon in icons}
+            if not all(any(theme in group for group in classes)
+                       for theme in ('about-icon-linkedin-dark', 'about-icon-linkedin-light')):
+                raise ValueError('LinkedIn precisa de ícones oficiais para ambos os temas')
+        if len({icon.attrs.get('src') for icon in icons}) != len(icons):
+            raise ValueError('Ícones de perfil duplicados')
+        for icon in icons:
+            src = icon.attrs.get('src', '')
+            parsed = urlsplit(urljoin(about_url, src))
+            if is_linkedin and 'linkedin' not in parsed.path.lower():
+                raise ValueError('Perfil LinkedIn deve usar ícone local da marca LinkedIn')
+            extension = '.png' if is_linkedin else '.svg'
+            if (not parsed.path.lower().endswith(extension) or
+                    (parsed.scheme, parsed.netloc) != (urlsplit(base).scheme, urlsplit(base).netloc)
+                    or not parsed.path.startswith(urlsplit(base).path)):
+                raise ValueError(f'Ícone local inválido: {src}')
+            if 'alt' not in icon.attrs and icon.attrs.get('aria-hidden') != 'true':
+                raise ValueError(f'Ícone sem alt ou aria-hidden: {src}')
+            with urlopen(urljoin(about_url, src), timeout=10) as response:
+                content_type = 'image/png' if is_linkedin else 'image/svg+xml'
+                if response.status != 200 or response.headers.get_content_type() != content_type:
+                    raise ValueError(f'Ícone não carregado: {src}')
+                data = response.read()
+                if is_linkedin:
+                    if not data.startswith(b'\x89PNG\r\n\x1a\n'):
+                        raise ValueError(f'Ícone PNG inválido: {src}')
+                else:
+                    try:
+                        if ET.fromstring(data).tag != '{http://www.w3.org/2000/svg}svg':
+                            raise ValueError(f'Ícone SVG sem conteúdo SVG: {src}')
+                    except ET.ParseError as error:
+                        raise ValueError(f'Ícone SVG inválido: {src}: {error}') from error
+
+def check_font(base, pages):
+    for page_url, page in pages.items():
+        styles = [urljoin(page_url, link.attrs.get('href', ''))
+                  for link in page.root.find('link')
+                  if 'stylesheet' in link.attrs.get('rel', '').split()]
+        found_weights = set()
+        for style_url in styles:
+            if not style_url.startswith(base):
+                continue
+            with urlopen(style_url, timeout=10) as response:
+                if response.status != 200:
+                    raise ValueError(f'CSS local indisponível: {style_url}')
+                css = response.read().decode('utf-8')
+            css = re.sub(r'/\*.*?\*/', '', css, flags=re.DOTALL)
+            rules = [(selector.strip(), body) for selector, body in
+                     re.findall(r'([^{}]+)\{([^{}]*)\}', css)]
+            family = r'["\']?JetBrains\s+Mono["\']?'
+            faces = [body for selector, body in rules if selector == '@font-face'
+                     and re.search(r'font-family\s*:\s*' + family + r'\s*(?:;|$)', body, re.I)]
+            body_fonts = [body for selector, body in rules
+                          if 'body' in [part.strip() for part in selector.split(',')]
+                          and re.search(r'font-family\s*:', body)]
+            root_fonts = [body for selector, body in rules if selector == ':root'
+                          and re.search(r'--font\s*:\s*' + family + r'\s*(?:[,;]|$)', body, re.I)]
+            primary = any(re.search(r'font-family\s*:\s*' + family + r'\s*(?:[,;]|$)', body, re.I)
+                          or (re.search(r'font-family\s*:\s*var\(\s*--font\s*\)', body)
+                              and root_fonts)
+                          for body in body_fonts)
+            if not faces or not primary:
+                continue
+            for face in faces:
+                weight = re.search(r'font-weight\s*:\s*(400|500|700)\s*(?:;|$)', face)
+                urls = re.findall(r'url\(\s*["\']?([^"\')]+)["\']?\s*\)', face)
+                for source in urls:
+                    font_url = urljoin(style_url, source)
+                    if not source.lower().split('?')[0].endswith('.woff2') or not font_url.startswith(base):
+                        continue
+                    with urlopen(font_url, timeout=10) as response:
+                        if response.status == 200 and response.read(4) == b'wOF2' and weight:
+                            found_weights.add(weight.group(1))
+        if found_weights != {'400', '500', '700'}:
+            raise ValueError(f'JetBrains Mono local WOFF2 incompleta como fonte primária: '
+                             f'{page_url} ({sorted(found_weights)})')
 
 def check_theme(base, pages):
     scripts = set()
@@ -343,7 +452,9 @@ def verify(base):
         try:
             check_blog(base, pages)
             check_off_topic(base, pages)
+            check_tutorial(base, pages)
             check_about(base, pages)
+            check_font(base, pages)
             check_theme(base, pages)
         except ValueError as error:
             errors.append(f'{base}: {error}')

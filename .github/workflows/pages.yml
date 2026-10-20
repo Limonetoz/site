@@ -49,7 +49,7 @@ jobs:
         with:
           ruby-version: '3.3'
 
-      - name: Testar arquivo Off-topic com e sem artigos
+      - name: Testar arquivos Off-topic e Tutorial com e sem artigos
         env:
           TMPDIR: ${{ runner.temp }}
         run: |

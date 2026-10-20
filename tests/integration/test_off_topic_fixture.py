@@ -12,6 +12,7 @@ from verify_jekyll_http import Page, one
 SITE = Path(__file__).resolve().parents[2]
 TOPIC = 'Fixture off-topic exclusiva'
 OTHER = 'Fixture fora da categoria exclusiva'
+TUTORIAL = 'Fixture tutorial exclusiva'
 
 
 def parse(path):
@@ -66,9 +67,26 @@ def build_and_check(source, root, prefix, populated):
         assert not listed, 'Arquivo sem posts deve estar vazio'
         assert any(node.text() for node in one(archive.root, 'main').find('p', 'posts-empty')), (
             'Estado vazio Off-topic ausente')
+    tutorial_path = output / 'posts/tutorial/index.html'
+    if not tutorial_path.is_file():
+        raise AssertionError('Arquivo /posts/tutorial/ não foi gerado')
+    tutorial = parse(tutorial_path)
+    tutorial_cards = cards(tutorial)
+    if populated:
+        assert TUTORIAL in home, 'Fixture tutorial não renderizou na página inicial'
+        assert set(tutorial_cards) == {TUTORIAL}, (
+            'Arquivo Tutorial deve conter apenas posts categorizados tutorial')
+        assert tutorial_cards[TUTORIAL] == home[TUTORIAL], (
+            'Link Tutorial difere da página inicial')
+        assert generated_path(output, tutorial_cards[TUTORIAL], prefix).is_file(), (
+            'Destino Tutorial não existe')
+    else:
+        assert not tutorial_cards, 'Arquivo Tutorial sem posts deve estar vazio'
+        assert any(node.text() for node in one(tutorial.root, 'main').find('p', 'posts-empty')), (
+            'Estado vazio Tutorial ausente')
     subprocess.run([sys.executable, str(SITE / 'tests/integration/test_built_site.py'),
                     str(output), '--base-path', prefix or '/'], check=True)
-    print(f'PASS fixture prefixo={prefix or "/"} posts={"dois" if populated else "nenhum"}')
+    print(f'PASS fixture prefixo={prefix or "/"} posts={"três" if populated else "nenhum"}')
 
 
 def main():
@@ -102,6 +120,10 @@ def main():
         (posts / '2020-01-02-fixture-other.md').write_text(
             '---\nlayout: post\ntitle: Fixture fora da categoria exclusiva\n'
             'categories: [estudos]\n'
+            'permalink: /posts/:year/:month/:day/:title/\n---\n\nConteúdo teste.\n')
+        (posts / '2020-01-03-fixture-tutorial.md').write_text(
+            '---\nlayout: post\ntitle: Fixture tutorial exclusiva\n'
+            'categories: [tutorial]\n'
             'permalink: /posts/:year/:month/:day/:title/\n---\n\nConteúdo teste.\n')
         for prefix in ('', '/site'):
             build_and_check(source, root, prefix, populated=True)

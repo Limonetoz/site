@@ -19,8 +19,12 @@
 - navegação Off-topic para `/posts/off-topic/`, arquivo com somente os posts
   categorizados `off-topic` (links descobertos dos cards da página inicial)
   ou mensagem explícita quando vazio;
-- navegação Sobre, página em `/sobre/`, dois links de perfil exatos e ícones SVG
-  locais acessíveis e disponíveis por HTTP em `/` e `/site`.
+- navegação Tutorial para `/posts/tutorial/`, arquivo com somente os posts
+  categorizados `tutorial` ou mensagem explícita quando vazio;
+- navegação Sobre, página em `/sobre/`, três links de perfil exatos (GitHub,
+  Codeberg e LinkedIn), seguros e acessíveis, com ícones locais SVG e PNG por HTTP;
+- JetBrains Mono como fonte primária no CSS, definida em `@font-face` por
+  arquivo WOFF2 local servido por HTTP em `/` e `/site`.
 
 As comparações usam os próprios cards renderizados, sem fixar título, data, URL
 ou frases de uma publicação. Um blog sem posts é válido se mostrar o estado
@@ -51,7 +55,7 @@ e também pode ser iniciado manualmente na aba Actions.
 
 1. Compila o site com a ação oficial do Jekyll para GitHub Pages.
 2. Serve o resultado em HTTP e executa os testes no prefixo de produção.
-3. Valida fixtures isoladas da categoria Off-topic com e sem artigos, em `/` e `/site`.
+3. Valida fixtures isoladas das categorias Off-topic e Tutorial com e sem artigos, em `/` e `/site`.
 4. Envia o artefato somente se os testes passarem.
 5. Confirma que o Pages usa GitHub Actions, em vez do deploy direto da branch.
 6. Publica esse mesmo artefato em um job com `needs: [build_test, pages_source]`.
@@ -79,12 +83,11 @@ isolada (requer Jekyll, Node.js e `TMPDIR`):
 nix-shell --run 'python3 tests/integration/test_off_topic_fixture.py'
 ```
 
-Ela copia o código-fonte para `$TMPDIR`, adiciona um post `off-topic` e
-outro `estudos` com datas passadas, compila e testa tanto `/` quanto `/site/`.
+Ela copia o código-fonte para `$TMPDIR`, adiciona posts `off-topic`, `tutorial`
+e `estudos` com datas passadas, compila e testa tanto `/` quanto `/site/`.
 Depois remove somente os posts da cópia, recompila e verifica o estado vazio;
 também executa as verificações HTTP/alt/links e o teste do script de tema.
-Não cria nem altera posts no repositório. Antes da implementação, o resultado
-esperado (RED) é falha por ausência do arquivo e do botão de tema.
+Não cria nem altera posts no repositório.
 
 Para provar que a validação de títulos rejeita artefatos quebrados sem tocar
 nos posts, crie uma cópia temporária do build e altere apenas o HTML gerado

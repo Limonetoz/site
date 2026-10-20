@@ -1,6 +1,6 @@
 # `Code4lag_`
 
-[Posts](https://limonetoz.github.io/site/#posts) · [Sobre](https://limonetoz.github.io/site/sobre/) · [GitHub](https://github.com/Limonetoz/site)
+[Posts](https://limonetoz.github.io/site/#posts) · [Tutorial](https://limonetoz.github.io/site/posts/tutorial/) · [Sobre](https://limonetoz.github.io/site/sobre/) · [GitHub](https://github.com/Limonetoz/site)
 
 ---
 
@@ -44,15 +44,27 @@ Para incluir um artigo na subcategoria **Off-topic**, use
 `categories: [off-topic]` no cabeçalho. A página
 [`/posts/off-topic/`](https://limonetoz.github.io/site/posts/off-topic/)
 lista apenas esses artigos e mostra uma mensagem quando não houver nenhum.
+Para incluir um artigo em **Tutorial**, use `categories: [tutorial]`.
+A página [`/posts/tutorial/`](https://limonetoz.github.io/site/posts/tutorial/)
+lista apenas os tutoriais e também mostra uma mensagem quando estiver vazia.
 O botão de tema no cabeçalho acompanha a preferência do sistema até a primeira
 escolha manual; depois, guarda essa escolha no navegador.
 
 A página [Sobre](https://limonetoz.github.io/site/sobre/) reúne os perfis
-GitHub e Codeberg com os ícones das respectivas plataformas. O símbolo do
+GitHub, Codeberg e LinkedIn com os ícones das respectivas plataformas. O símbolo do
 GitHub foi extraído do [perfil no GitHub](https://github.com/Limonetoz/) e o
 do Codeberg do [SVG oficial](https://codeberg.org/assets/img/svg/cb-logo.svg).
+Os ícones [in] são PNGs do [pacote oficial do LinkedIn](https://brand.linkedin.com/downloads):
+`in-logo/InBug-White.png` (SHA-256 `ed22a5ab46c171e3449708ff34923de7298da00ac204c7f85444db05bf888791`)
+para o tema escuro e `in-logo/LI-In-Bug.png` (SHA-256
+`3c0149f26168b5fe0f43e68664abe40341a6443b3cd435d18a73e12f64f8b600`)
+para o tema claro. São usados apenas para identificar o link do perfil.
 As marcas pertencem às respectivas plataformas; esses arquivos não representam
 uma licença de uso das marcas fora deste contexto de identificação de links.
+O site usa [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) como fonte
+padrão, hospedada localmente em pesos 400, 500 e 700. Os arquivos de fonte
+seguem a licença [SIL Open Font License](assets/fonts/OFL.txt), distribuída
+junto deles.
 
 ## `02 // estrutura`
 
@@ -67,11 +79,13 @@ site/
 │   └── post.html
 ├── _posts/                      # Artigos em Markdown
 ├── posts/off-topic/index.html   # Arquivo da subcategoria Off-topic
+├── posts/tutorial/index.html    # Arquivo da categoria Tutorial
 ├── sobre/index.html             # Página de perfis e links
 ├── assets/
 │   ├── css/style.css            # Estilos do site
 │   ├── js/theme.js              # Alternância de tema
-│   └── images/                  # Mascote e ícones GitHub/Codeberg
+│   ├── images/                  # Mascote e ícones dos perfis
+│   └── fonts/                   # JetBrains Mono WOFF2 e OFL.txt
 ├── tests/
 │   ├── integration/             # Testes HTTP
 │   └── README.md
@@ -115,8 +129,8 @@ As verificações cobrem:
 - Um título principal e uma área de conteúdo por página.
 - Imagens com texto alternativo e link do repositório presente.
 - CSS, mascote e demais arquivos vinculados acessíveis por HTTP.
-- Arquivo Off-topic filtrado e com estado vazio; tema alternável e persistido.
-- Página Sobre e perfis com ícones SVG locais, também no prefixo `/site`.
+- Arquivos Off-topic e Tutorial filtrados e com estado vazio; tema persistido.
+- Página Sobre, três perfis com ícones locais e JetBrains Mono, também em `/site`.
 
 [Instruções completas dos testes →](tests/README.md)
 
