@@ -44,4 +44,9 @@ with tempfile.TemporaryDirectory(prefix='jekyll-http-') as temporary:
         server.shutdown()
         server.server_close()
         thread.join()
-    sys.exit(result.returncode)
+    palette = subprocess.run([
+        sys.executable,
+        str(Path(__file__).with_name('test_crimson_accents.py')),
+        str(build_dir),
+    ], check=False)
+    sys.exit(result.returncode or palette.returncode)

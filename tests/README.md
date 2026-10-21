@@ -28,7 +28,9 @@
 - navegação Sobre, página em `/sobre/`, três links de perfil exatos (GitHub,
   Codeberg e LinkedIn), seguros e acessíveis, com ícones locais SVG e PNG por HTTP;
 - JetBrains Mono como fonte primária no CSS, definida em `@font-face` por
-  arquivo WOFF2 local servido por HTTP em `/` e `/site`.
+  arquivo WOFF2 local servido por HTTP em `/` e `/site`;
+- acentos carmesim em ambos os temas, botão legível em estado normal e hover/foco,
+  com marcas oficiais e mascote preservados (`test_crimson_accents.py`);
 - `/en/`, `/en/sobre/`, arquivos `/en/posts/…/` e posts em inglês com
   `html lang` correto, títulos/conteúdo localizados e switch PT/EN no cabeçalho
   apontando de volta à página equivalente (inclusive artigo);
