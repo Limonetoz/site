@@ -29,6 +29,16 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Configurar Python para validar imagens e fontes
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: tests/requirements.txt
+
+      - name: Instalar dependências de teste
+        run: python3 -m pip install -r tests/requirements.txt
+
       - name: Configurar Pages
         id: pages
         uses: actions/configure-pages@v5

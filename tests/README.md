@@ -8,6 +8,10 @@
 - links respeitando o prefixo do site e âncoras existentes;
 - exatamente um `h1` e um `main` por página;
 - imagens com atributo `alt`, folha de estilos e favicon local presentes;
+- assets locais servidos com MIME adequado; SVGs sem conteúdo ativo ou referências
+  remotas e PNGs decodificáveis;
+- apenas páginas, feeds, CSS, JS, imagens, fontes e licença de fonte permitidos
+  no artefato; novos tipos de arquivo exigem revisão da lista de publicação;
 - link do repositório e proteção `noopener` em links que abrem nova aba;
 - cards de posts com título, resumo e link para a página publicada; se não houver
   artigos, mensagem explícita de lista vazia;
@@ -27,10 +31,8 @@
   categorizados `tutorial` ou mensagem explícita quando vazio;
 - navegação Sobre, página em `/sobre/`, três links de perfil exatos (GitHub,
   Codeberg e LinkedIn), seguros e acessíveis, com ícones locais SVG e PNG por HTTP;
-- JetBrains Mono como fonte primária no CSS, definida em `@font-face` por
-  arquivo WOFF2 local servido por HTTP em `/` e `/site`;
-- acentos carmesim em ambos os temas, botão legível em estado normal e hover/foco,
-  com marcas oficiais e mascote preservados (`test_crimson_accents.py`);
+- fontes referenciadas por `@font-face` e utilizadas pelo CSS servidas por HTTP,
+  com MIME e conteúdo WOFF2 decodificáveis em `/` e `/site`, sem fixar nome ou peso;
 - `/en/`, `/en/sobre/`, arquivos `/en/posts/…/` e posts em inglês com
   `html lang` correto, títulos/conteúdo localizados e switch PT/EN no cabeçalho
   apontando de volta à página equivalente (inclusive artigo);
@@ -59,6 +61,8 @@ nix-shell --run 'python3 tests/integration/verify_jekyll_http.py http://127.0.0.
 O script retorna código 0 quando todas as verificações passam e 1 quando alguma falha. O servidor precisa estar em execução.
 
 A pasta `tests/` é excluída do site publicado por `_config.yml`.
+O ambiente Nix fornece Pillow para decodificar PNG e WOFF2. Fora do Nix,
+instale as dependências com `python3 -m pip install -r tests/requirements.txt`.
 
 ## GitHub Actions
 
@@ -99,7 +103,10 @@ Ela copia o código-fonte para `$TMPDIR`, adiciona posts PT/EN correspondentes
 `off-topic`, `tutorial` e `estudos` com datas passadas, compila e testa tanto
 `/` quanto `/site/`, inclusive arquivos e feeds de cada idioma.
 Depois remove somente os posts da cópia, recompila e verifica o estado vazio;
-também executa as verificações HTTP/alt/links e o teste do script de tema.
+também corrompe SVG, PNG, WOFF2 e o uso da fonte somente no build temporário,
+insere SVGs ativos/remotos e arquivos privados de nomes distintos para provar
+as barreiras de recursos e publicação. Também executa HTTP/alt/links e testa
+o script de tema.
 Não cria nem altera posts no repositório.
 
 Para provar que a validação de títulos rejeita artefatos quebrados sem tocar

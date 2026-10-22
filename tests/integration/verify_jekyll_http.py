@@ -1,18 +1,24 @@
 """Validate generated pages and their local links through HTTP."""
 
 import argparse
+import base64
+import binascii
 import re
 import shutil
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
+import zlib
 from collections import deque
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 from html.parser import HTMLParser
+from io import BytesIO
 from pathlib import Path
 from urllib.parse import urldefrag, urljoin, urlsplit
 from urllib.request import urlopen
+
+from PIL import Image, ImageFont
 
 
 class Element:
@@ -85,6 +91,109 @@ def one(element, tag=None, css_class=None):
     if len(found) != 1:
         raise ValueError(f'Esperado um {tag or "elemento"}.{css_class or ""}; encontrados {len(found)}')
     return found[0]
+
+
+def valid_png(data):
+    if not data.startswith(b'\x89PNG\r\n\x1a\n'):
+        return False
+    offset = 8
+    image_data = []
+    while offset + 12 <= len(data):
+        length = int.from_bytes(data[offset:offset + 4], 'big')
+        end = offset + length + 12
+        if end > len(data):
+            return False
+        kind = data[offset + 4:offset + 8]
+        payload = data[offset + 8:end - 4]
+        checksum = int.from_bytes(data[end - 4:end], 'big')
+        if (offset == 8 and kind != b'IHDR') or zlib.crc32(kind + payload) != checksum:
+            return False
+        if kind == b'IHDR':
+            if (offset != 8 or length != 13
+                    or not int.from_bytes(payload[:4], 'big')
+                    or not int.from_bytes(payload[4:8], 'big')):
+                return False
+        elif kind == b'IDAT':
+            image_data.append(payload)
+        elif kind == b'IEND':
+            if length or end != len(data) or not image_data:
+                return False
+            try:
+                decoder = zlib.decompressobj()
+                decoder.decompress(b''.join(image_data))
+                if not decoder.eof or decoder.unused_data:
+                    return False
+                with Image.open(BytesIO(data)) as image:
+                    image.load()
+                    return image.format == 'PNG' and image.width > 0 and image.height > 0
+            except (zlib.error, OSError, ValueError):
+                return False
+        offset = end
+    return False
+
+
+def check_local_asset(url, content_type, data):
+    suffix = Path(urlsplit(url).path).suffix.lower()
+    expected = {
+        '.css': 'text/css',
+        '.js': 'application/javascript',
+        '.svg': 'image/svg+xml',
+        '.png': 'image/png',
+        '.woff2': 'font/woff2',
+    }.get(suffix)
+    accepted = {expected}
+    if suffix == '.js':
+        accepted.add('text/javascript')
+    if suffix == '.woff2':
+        accepted.add('application/font-woff2')
+    if expected and (content_type not in accepted or not data):
+        raise ValueError(f'Asset local indisponível ou tipo incorreto: {url}')
+    if suffix == '.svg':
+        try:
+            root = ET.fromstring(data)
+            if any(True for _ in ET.iterparse(BytesIO(data), events=('pi',))):
+                raise ValueError(f'SVG inseguro: {url}')
+        except ET.ParseError as error:
+            raise ValueError(f'SVG inválido: {url}') from error
+        if root.tag != '{http://www.w3.org/2000/svg}svg':
+            raise ValueError(f'SVG inválido: {url}')
+        safe_tags = {'svg', 'g', 'path', 'rect', 'circle', 'ellipse', 'line',
+                     'polyline', 'polygon', 'defs', 'linearGradient',
+                     'radialGradient', 'stop', 'clipPath', 'mask', 'title',
+                     'desc', 'text', 'tspan', 'image'}
+        namespace = '{http://www.w3.org/2000/svg}'
+        for element in root.iter():
+            if not element.tag.startswith(namespace) or element.tag[len(namespace):] not in safe_tags:
+                raise ValueError(f'SVG inseguro: {url}')
+            for key, value in element.attrib.items():
+                name = key.rsplit('}', 1)[-1].lower()
+                if (name.startswith('on') or name == 'base'
+                        or '@import' in value.lower() or 'javascript:' in value.lower()):
+                    raise ValueError(f'SVG inseguro: {url}')
+                if name in {'href', 'src'} and not value.startswith('#'):
+                    if (element.tag != namespace + 'image'
+                            or not value.startswith('data:image/png;base64,')):
+                        raise ValueError(f'SVG inseguro: {url}')
+                    try:
+                        embedded = base64.b64decode(value.split(',', 1)[1], validate=True)
+                    except (ValueError, binascii.Error) as error:
+                        raise ValueError(f'SVG inseguro: {url}') from error
+                    if not valid_png(embedded):
+                        raise ValueError(f'SVG inseguro: {url}')
+                references = re.findall(r'url\(\s*["\']?([^"\')]+)', value, re.I)
+                if any(not ref.startswith('#') for ref in references):
+                    raise ValueError(f'SVG inseguro: {url}')
+    if suffix == '.png' and not valid_png(data):
+        raise ValueError(f'PNG inválido: {url}')
+    if suffix == '.woff2' and (len(data) < 48 or data[:4] != b'wOF2'
+                               or int.from_bytes(data[8:12], 'big') != len(data)
+                               or not int.from_bytes(data[12:14], 'big')):
+        raise ValueError(f'WOFF2 inválida: {url}')
+    if suffix == '.woff2':
+        try:
+            ImageFont.truetype(BytesIO(data), size=12).getname()
+        except (OSError, ValueError) as error:
+            raise ValueError(f'WOFF2 inválida: {url}') from error
 
 
 def check_post_navigation(page, page_url, base):
@@ -534,48 +643,64 @@ def check_feeds(base, pages):
 
 
 def check_font(base, pages):
-    for page_url, page in pages.items():
-        styles = [urljoin(page_url, link.attrs.get('href', ''))
-                  for link in page.root.find('link')
-                  if 'stylesheet' in link.attrs.get('rel', '').split()]
-        found_weights = set()
-        for style_url in styles:
-            if not style_url.startswith(base):
-                continue
+    styles = {urljoin(page_url, link.attrs.get('href', ''))
+              for page_url, page in pages.items()
+              for link in page.root.find('link')
+              if 'stylesheet' in link.attrs.get('rel', '').split()}
+    checked_fonts = set()
+    face_families = set()
+    font_variables = {}
+    body_fonts = []
+    for style_url in styles:
+        if not style_url.startswith(base):
+            continue
+        try:
             with urlopen(style_url, timeout=10) as response:
                 if response.status != 200:
                     raise ValueError(f'CSS local indisponível: {style_url}')
-                css = response.read().decode('utf-8')
-            css = re.sub(r'/\*.*?\*/', '', css, flags=re.DOTALL)
-            rules = [(selector.strip(), body) for selector, body in
-                     re.findall(r'([^{}]+)\{([^{}]*)\}', css)]
-            family = r'["\']?JetBrains\s+Mono["\']?'
-            faces = [body for selector, body in rules if selector == '@font-face'
-                     and re.search(r'font-family\s*:\s*' + family + r'\s*(?:;|$)', body, re.I)]
-            body_fonts = [body for selector, body in rules
-                          if 'body' in [part.strip() for part in selector.split(',')]
-                          and re.search(r'font-family\s*:', body)]
-            root_fonts = [body for selector, body in rules if selector == ':root'
-                          and re.search(r'--font\s*:\s*' + family + r'\s*(?:[,;]|$)', body, re.I)]
-            primary = any(re.search(r'font-family\s*:\s*' + family + r'\s*(?:[,;]|$)', body, re.I)
-                          or (re.search(r'font-family\s*:\s*var\(\s*--font\s*\)', body)
-                              and root_fonts)
-                          for body in body_fonts)
-            if not faces or not primary:
-                continue
-            for face in faces:
-                weight = re.search(r'font-weight\s*:\s*(400|500|700)\s*(?:;|$)', face)
-                urls = re.findall(r'url\(\s*["\']?([^"\')]+)["\']?\s*\)', face)
-                for source in urls:
-                    font_url = urljoin(style_url, source)
-                    if not source.lower().split('?')[0].endswith('.woff2') or not font_url.startswith(base):
-                        continue
+                css_data = response.read()
+                check_local_asset(style_url, response.headers.get_content_type(), css_data)
+                css = css_data.decode('utf-8')
+        except (OSError, UnicodeDecodeError) as error:
+            raise ValueError(f'CSS local indisponível: {style_url}') from error
+        css = re.sub(r'/\*.*?\*/', '', css, flags=re.DOTALL)
+        for selector, body in re.findall(r'([^{}]+)\{([^{}]*)\}', css):
+            selectors = [part.strip() for part in selector.split(',')]
+            if ':root' in selectors:
+                font_variables.update(re.findall(r'(--[\w-]+)\s*:\s*([^;]+)', body))
+            if 'body' in selectors:
+                body_fonts.extend(re.findall(r'font-family\s*:\s*([^;]+)', body))
+        for face in re.findall(r'@font-face\s*\{([^{}]*)\}', css, flags=re.I):
+            family = re.search(r'font-family\s*:\s*([^;]+)', face, flags=re.I)
+            if not family:
+                raise ValueError(f'@font-face sem família: {style_url}')
+            face_families.add(family.group(1).strip().strip('"\''))
+            sources = re.findall(r'url\(\s*["\']?([^"\')]+)["\']?\s*\)', face)
+            if not sources:
+                raise ValueError(f'@font-face sem arquivo: {style_url}')
+            for source in sources:
+                font_url = urljoin(style_url, source)
+                if not font_url.startswith(base) or not urlsplit(font_url).path.endswith('.woff2'):
+                    raise ValueError(f'Fonte não local WOFF2: {font_url}')
+                if font_url in checked_fonts:
+                    continue
+                try:
                     with urlopen(font_url, timeout=10) as response:
-                        if response.status == 200 and response.read(4) == b'wOF2' and weight:
-                            found_weights.add(weight.group(1))
-        if found_weights != {'400', '500', '700'}:
-            raise ValueError(f'JetBrains Mono local WOFF2 incompleta como fonte primária: '
-                             f'{page_url} ({sorted(found_weights)})')
+                        if response.status != 200:
+                            raise ValueError(f'Fonte indisponível: {font_url}')
+                        check_local_asset(font_url, response.headers.get_content_type(), response.read())
+                except OSError as error:
+                    raise ValueError(f'Fonte indisponível: {font_url}') from error
+                checked_fonts.add(font_url)
+    if not checked_fonts:
+        raise ValueError('Nenhuma fonte WOFF2 local carregada a partir do CSS')
+    active_families = set()
+    for value in body_fonts:
+        variable = re.fullmatch(r'var\(\s*(--[\w-]+)\s*\)', value.strip())
+        value = font_variables.get(variable.group(1), '') if variable else value
+        active_families.add(value.split(',', 1)[0].strip().strip('"\''))
+    if not active_families.intersection(face_families):
+        raise ValueError('Fonte declarada mas não utilizada pela página')
 
 def check_theme(base, pages):
     theme_script = urljoin(base, 'assets/js/theme.js')
@@ -641,6 +766,7 @@ def verify(base):
                     raise ValueError(f'Redirecionamento inesperado: {response.url}')
                 data = response.read()
                 content_type = response.headers.get_content_type()
+            check_local_asset(url, content_type, data)
             if content_type == 'text/html':
                 html = data.decode('utf-8')
                 if '{%' in html or '{{' in html or html.startswith('---'):

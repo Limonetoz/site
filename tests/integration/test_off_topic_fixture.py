@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import zlib
 from pathlib import Path
 from urllib.parse import urljoin, urlsplit
 
@@ -17,6 +18,16 @@ TUTORIAL = 'Fixture tutorial exclusiva'
 EN_TOPIC = 'English off-topic fixture'
 EN_OTHER = 'English uncategorized fixture'
 EN_TUTORIAL = 'English tutorial fixture'
+
+
+def require(condition, message):
+    if not condition:
+        raise AssertionError(message)
+
+
+def png_chunk(kind, payload):
+    return (len(payload).to_bytes(4, 'big') + kind + payload
+            + zlib.crc32(kind + payload).to_bytes(4, 'big'))
 
 
 def parse(path):
@@ -62,34 +73,34 @@ def build_and_check(source, root, prefix, populated):
     archive = parse(archive_path)
     listed = cards(archive)
     if populated:
-        assert TOPIC in home and OTHER in home, 'Fixtures não renderizaram na página inicial'
-        assert TOPIC in listed, 'Post categorizado off-topic ausente do arquivo'
-        assert OTHER not in listed, 'Post sem off-topic vazou para o arquivo'
-        assert listed[TOPIC] == home[TOPIC], 'Links da listagem e da página inicial divergem'
-        assert generated_path(output, listed[TOPIC], prefix).is_file(), 'Destino não existe'
+        require(TOPIC in home and OTHER in home, 'Fixtures não renderizaram na página inicial')
+        require(TOPIC in listed, 'Post categorizado off-topic ausente do arquivo')
+        require(OTHER not in listed, 'Post sem off-topic vazou para o arquivo')
+        require(listed[TOPIC] == home[TOPIC], 'Links da listagem e da página inicial divergem')
+        require(generated_path(output, listed[TOPIC], prefix).is_file(), 'Destino não existe')
     else:
-        assert not listed, 'Arquivo sem posts deve estar vazio'
-        assert any(node.text() for node in one(archive.root, 'main').find('p', 'posts-empty')), (
-            'Estado vazio Off-topic ausente')
+        require(not listed, 'Arquivo sem posts deve estar vazio')
+        require(any(node.text() for node in one(archive.root, 'main').find('p', 'posts-empty')),
+                'Estado vazio Off-topic ausente')
     tutorial_path = output / 'posts/tutorial/index.html'
     if not tutorial_path.is_file():
         raise AssertionError('Arquivo /posts/tutorial/ não foi gerado')
     tutorial = parse(tutorial_path)
     tutorial_cards = cards(tutorial)
     if populated:
-        assert TUTORIAL in home, 'Fixture tutorial não renderizou na página inicial'
-        assert set(tutorial_cards) == {TUTORIAL}, (
-            'Arquivo Tutorial deve conter apenas posts categorizados tutorial')
-        assert tutorial_cards[TUTORIAL] == home[TUTORIAL], (
-            'Link Tutorial difere da página inicial')
-        assert generated_path(output, tutorial_cards[TUTORIAL], prefix).is_file(), (
-            'Destino Tutorial não existe')
+        require(TUTORIAL in home, 'Fixture tutorial não renderizou na página inicial')
+        require(set(tutorial_cards) == {TUTORIAL},
+                'Arquivo Tutorial deve conter apenas posts categorizados tutorial')
+        require(tutorial_cards[TUTORIAL] == home[TUTORIAL],
+                'Link Tutorial difere da página inicial')
+        require(generated_path(output, tutorial_cards[TUTORIAL], prefix).is_file(),
+                'Destino Tutorial não existe')
     else:
-        assert not tutorial_cards, 'Arquivo Tutorial sem posts deve estar vazio'
-        assert any(node.text() for node in one(tutorial.root, 'main').find('p', 'posts-empty')), (
-            'Estado vazio Tutorial ausente')
+        require(not tutorial_cards, 'Arquivo Tutorial sem posts deve estar vazio')
+        require(any(node.text() for node in one(tutorial.root, 'main').find('p', 'posts-empty')),
+                'Estado vazio Tutorial ausente')
     english_home = output / 'en/index.html'
-    assert english_home.is_file(), 'Página inicial EN não foi gerada'
+    require(english_home.is_file(), 'Página inicial EN não foi gerada')
     english_cards = cards(parse(english_home), 'posts')
     english_archives = {
         'off-topic': (EN_TOPIC, EN_OTHER),
@@ -97,22 +108,24 @@ def build_and_check(source, root, prefix, populated):
     }
     for category, (expected, excluded) in english_archives.items():
         path = output / 'en/posts' / category / 'index.html'
-        assert path.is_file(), f'Arquivo EN {category} não foi gerado'
+        require(path.is_file(), f'Arquivo EN {category} não foi gerado')
         page = parse(path)
         listed = cards(page)
         if populated:
-            assert expected in english_cards and expected in listed, f'Fixture EN {category} ausente'
-            assert excluded not in listed and TOPIC not in listed, f'Post de outro idioma/categoria no arquivo EN {category}'
-            assert listed[expected] == english_cards[expected], f'Links EN {category} divergem'
-            assert generated_path(output, listed[expected], prefix).is_file(), 'Destino EN não existe'
+            require(expected in english_cards and expected in listed, f'Fixture EN {category} ausente')
+            require(excluded not in listed and TOPIC not in listed,
+                    f'Post de outro idioma/categoria no arquivo EN {category}')
+            require(listed[expected] == english_cards[expected], f'Links EN {category} divergem')
+            require(generated_path(output, listed[expected], prefix).is_file(), 'Destino EN não existe')
         else:
-            assert not listed, f'Arquivo EN {category} deveria estar vazio'
-            assert any(node.text() for node in one(page.root, 'main').find('p', 'posts-empty')), (
-                f'Estado vazio EN {category} ausente')
+            require(not listed, f'Arquivo EN {category} deveria estar vazio')
+            require(any(node.text() for node in one(page.root, 'main').find('p', 'posts-empty')),
+                    f'Estado vazio EN {category} ausente')
     if populated:
-        assert {EN_TOPIC, EN_OTHER, EN_TUTORIAL} <= set(english_cards), 'Fixtures EN não renderizaram'
-        assert not {TOPIC, OTHER, TUTORIAL} & set(english_cards), 'Posts PT vazaram para EN'
-        assert not {EN_TOPIC, EN_OTHER, EN_TUTORIAL} & set(home), 'Posts EN vazaram para PT'
+        require({EN_TOPIC, EN_OTHER, EN_TUTORIAL} <= set(english_cards),
+                'Fixtures EN não renderizaram')
+        require(not {TOPIC, OTHER, TUTORIAL} & set(english_cards), 'Posts PT vazaram para EN')
+        require(not {EN_TOPIC, EN_OTHER, EN_TUTORIAL} & set(home), 'Posts EN vazaram para PT')
     subprocess.run([sys.executable, str(SITE / 'tests/integration/test_built_site.py'),
                     str(output), '--base-path', prefix or '/'], check=True)
     print(f'PASS fixture prefixo={prefix or "/"} posts={"três" if populated else "nenhum"}')
@@ -164,17 +177,143 @@ def main():
                 f'permalink: /en/posts/2020/01/{day}/{slug}/\n---\n\nTest content.\n')
         for prefix in ('', '/site'):
             build_and_check(source, root, prefix, populated=True)
+        site_build = root / 'site/populated'
+        icon = site_build / 'assets/images/icon.svg'
+        original_icon = icon.read_bytes()
+        try:
+            icon.write_bytes(b'not-an-svg')
+            result = subprocess.run(
+                [sys.executable, str(SITE / 'tests/integration/test_built_site.py'),
+                 str(site_build), '--base-path', '/site'],
+                text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
+            require(result.returncode != 0 and 'SVG inválido' in result.stdout,
+                    'Um ícone servido com HTTP 200 mas inválido deve reprovar o build')
+        finally:
+            icon.write_bytes(original_icon)
+        try:
+            for unsafe_svg in (
+                    b'<svg xmlns="http://www.w3.org/2000/svg"><script/></svg>',
+                    b'<svg xmlns="http://www.w3.org/2000/svg"><image href="https://example.invalid/icon.png"/></svg>',
+                    b'<svg xmlns="http://www.w3.org/2000/svg" xml:base="https://example.invalid/"><image href="#remote"/></svg>',
+                    b'<?xml-stylesheet type="text/css" href="https://example.invalid/a.css"?><svg xmlns="http://www.w3.org/2000/svg"/>'):
+                icon.write_bytes(unsafe_svg)
+                result = subprocess.run(
+                    [sys.executable, str(SITE / 'tests/integration/test_built_site.py'),
+                     str(site_build), '--base-path', '/site'],
+                    text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
+                require(result.returncode != 0 and 'SVG inseguro' in result.stdout,
+                        'SVG com script ou referência remota deve reprovar o build')
+        finally:
+            icon.write_bytes(original_icon)
+        png = next((site_build / 'assets/images').glob('*.png'))
+        original_png = png.read_bytes()
+        try:
+            png.write_bytes(original_png[:24])
+            result = subprocess.run(
+                [sys.executable, str(SITE / 'tests/integration/test_built_site.py'),
+                 str(site_build), '--base-path', '/site'],
+                text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
+            require(result.returncode != 0 and 'PNG inválido' in result.stdout,
+                    'PNG truncado com cabeçalho válido deve reprovar o build')
+        finally:
+            png.write_bytes(original_png)
+        invalid_pixels = (b'\x89PNG\r\n\x1a\n'
+                          + png_chunk(b'IHDR', (1).to_bytes(4, 'big') * 2
+                                      + bytes([8, 2, 0, 0, 0]))
+                          + png_chunk(b'IDAT', zlib.compress(b'\x05\x00\x00\x00'))
+                          + png_chunk(b'IEND', b''))
+        try:
+            png.write_bytes(invalid_pixels)
+            result = subprocess.run(
+                [sys.executable, str(SITE / 'tests/integration/test_built_site.py'),
+                 str(site_build), '--base-path', '/site'],
+                text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
+            require(result.returncode != 0 and 'PNG inválido' in result.stdout,
+                    'PNG com CRC correto mas filtro inválido deve reprovar o build')
+        finally:
+            png.write_bytes(original_png)
+        font = next((site_build / 'assets/fonts').glob('*.woff2'))
+        original_font = font.read_bytes()
+        try:
+            font.write_bytes(b'wOF2')
+            result = subprocess.run(
+                [sys.executable, str(SITE / 'tests/integration/test_built_site.py'),
+                 str(site_build), '--base-path', '/site'],
+                text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
+            require(result.returncode != 0 and 'WOFF2 inválida' in result.stdout,
+                    'Uma fonte truncada com assinatura válida deve reprovar o build')
+        finally:
+            font.write_bytes(original_font)
+        fake_font = b'wOF2' + b'OTTO' + (48).to_bytes(4, 'big') + (1).to_bytes(2, 'big') + bytes(34)
+        try:
+            font.write_bytes(fake_font)
+            result = subprocess.run(
+                [sys.executable, str(SITE / 'tests/integration/test_built_site.py'),
+                 str(site_build), '--base-path', '/site'],
+                text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
+            require(result.returncode != 0 and 'WOFF2 inválida' in result.stdout,
+                    'WOFF2 com cabeçalho plausível mas sem fonte deve reprovar o build')
+        finally:
+            font.write_bytes(original_font)
+        stylesheet = site_build / 'assets/css/style.css'
+        original_stylesheet = stylesheet.read_text()
+        require(original_stylesheet.count('font-family: var(--font);') == 1,
+                'Fixture esperava uma aplicação da fonte declarada no CSS')
+        try:
+            stylesheet.write_text(original_stylesheet.replace(
+                'font-family: var(--font);', 'font-family: monospace;'))
+            result = subprocess.run(
+                [sys.executable, str(SITE / 'tests/integration/test_built_site.py'),
+                 str(site_build), '--base-path', '/site'],
+                text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
+            require(result.returncode != 0 and 'Fonte declarada mas não utilizada' in result.stdout,
+                    'Fonte local não aplicada à página deve reprovar o build')
+        finally:
+            stylesheet.write_text(original_stylesheet)
+        private_asset = site_build / '.env.local'
+        try:
+            private_asset.write_text('fixture-placeholder\n')
+            result = subprocess.run(
+                [sys.executable, str(SITE / 'tests/integration/test_built_site.py'),
+                 str(site_build), '--base-path', '/site'],
+                text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
+            require(result.returncode != 0 and 'Arquivo privado no build' in result.stdout,
+                    'O build não deve aceitar arquivos locais privados')
+        finally:
+            private_asset.unlink()
+        private_asset = site_build / 'credentials.json'
+        try:
+            private_asset.write_text('{"fixture": true}\n')
+            result = subprocess.run(
+                [sys.executable, str(SITE / 'tests/integration/test_built_site.py'),
+                 str(site_build), '--base-path', '/site'],
+                text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
+            require(result.returncode != 0 and 'Arquivo privado no build' in result.stdout,
+                    'Um arquivo privado não previsto em lista de bloqueio deve reprovar o build')
+        finally:
+            private_asset.unlink()
+        unused_svg = site_build / 'assets/images/unused.svg'
+        try:
+            unused_svg.write_text('<svg xmlns="http://www.w3.org/2000/svg"><script/></svg>')
+            result = subprocess.run(
+                [sys.executable, str(SITE / 'tests/integration/test_built_site.py'),
+                 str(site_build), '--base-path', '/site'],
+                text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
+            require(result.returncode != 0 and 'SVG inseguro' in result.stdout,
+                    'SVG não vinculado também deve ser validado antes da publicação')
+        finally:
+            unused_svg.unlink()
         originals = {}
         for article in posts.rglob('*.md'):
             content = article.read_text()
             if 'translation_key: 2026-10-19-mudanca' in content:
                 originals[article] = content
                 article.write_text(re.sub(r'^image(?:_alt)?:[^\n]*\n', '', content, flags=re.M))
-        assert len(originals) == 2, 'Fixture deve conter o par ilustrado PT/EN'
+        require(len(originals) == 2, 'Fixture deve conter o par ilustrado PT/EN')
         try:
             post_art_by_title(posts)
         except ValueError as error:
-            assert 'Ilustração aprovada ausente' in str(error), str(error)
+            require('Ilustração aprovada ausente' in str(error), str(error))
         else:
             raise AssertionError('Remover a ilustração aprovada deve falhar')
         finally:
@@ -187,7 +326,7 @@ def main():
         try:
             post_art_by_title(posts)
         except ValueError as error:
-            assert 'O ícone dos agentes pertence' in str(error), str(error)
+            require('O ícone dos agentes pertence' in str(error), str(error))
         else:
             raise AssertionError('Ícone aprovado não pode aparecer em outro par de artigos')
         extra_art.unlink()

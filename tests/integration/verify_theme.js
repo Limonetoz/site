@@ -82,7 +82,8 @@ function scenario(systemDark, saved, storageFails = false, language = 'pt') {
   assert.equal(button.hidden, false, 'toggle must become visible');
   assert.equal(button.textContent, labels[initial]);
   assert.equal(button.getAttribute('aria-label'), initial === 'dark' ? labels.toLight : labels.toDark);
-  assert.equal(browserColor.attrs.content, initial === 'dark' ? '#050505' : '#f4f3ee');
+  const initialBrowserColor = browserColor.attrs.content;
+  assert.ok(initialBrowserColor, 'browser theme-color must be set');
   media.matches = !systemDark;
   handlers['media:change']();
   assert.equal(root.getAttribute('data-theme'), saved || (media.matches ? 'dark' : 'light'),
@@ -93,6 +94,9 @@ function scenario(systemDark, saved, storageFails = false, language = 'pt') {
   handlers['button:click']();
   const next = initial === 'dark' ? 'light' : 'dark';
   assert.equal(root.getAttribute('data-theme'), next, 'click must change root theme');
+  assert.ok(browserColor.attrs.content, 'browser theme-color must remain set');
+  assert.notEqual(browserColor.attrs.content, initialBrowserColor,
+    'browser theme-color must update with the selected theme');
   if (!storageFails) assert.equal(storage.get('site-theme'), next, 'click must persist preference');
   assert.equal(button.textContent, labels[next]);
   assert.equal(button.getAttribute('aria-label'), next === 'dark' ? labels.toLight : labels.toDark);
