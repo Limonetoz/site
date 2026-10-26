@@ -23,7 +23,8 @@ com JavaScript leve para alternar o tema e buscar posts no próprio navegador.
 ## `01 // posts`
 
 Os artigos ficam em [`_posts/`](_posts/) e aparecem automaticamente na página
-inicial, com título, categoria, resumo e data.
+inicial, dedicada ao feed de posts, com título, categoria, resumo e data.
+O mascote identifica o site ao lado de `Code4lag_` no cabeçalho.
 
 Para publicar, crie `_posts/AAAA-MM-DD-titulo.md`:
 

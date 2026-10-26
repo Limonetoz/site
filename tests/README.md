@@ -14,8 +14,10 @@
   no artefato; novos tipos de arquivo exigem revisão da lista de publicação;
 - link único do repositório no `nav.footer-links` de todas as páginas, com
   rótulo acessível PT/EN, `target="_blank"` e `rel="noopener noreferrer"`;
-- cards de posts com título, resumo e link para a página publicada; se não houver
-  artigos, mensagem explícita de lista vazia;
+- home composta somente pelo feed de posts, com um `h1` e sem perfil ou
+  ilustração no conteúdo; mascote local no logo do cabeçalho, inclusive em EN;
+  cards com título, resumo e link para a página publicada; se não houver artigos,
+  mensagem explícita de lista vazia;
 - título, categoria e data ISO/data visível consistentes entre card e artigo;
 - artigo com conteúdo, título do documento, descrição, navegação e retorno para `#posts`.
 - ilustrações declaradas no front matter somente nos artigos correspondentes,
