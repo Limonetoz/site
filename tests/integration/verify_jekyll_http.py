@@ -20,6 +20,7 @@ from urllib.parse import urldefrag, urljoin, urlsplit
 from urllib.request import urlopen
 
 from PIL import Image, ImageFont
+import yaml
 
 
 class Element:
@@ -169,7 +170,8 @@ def check_local_asset(url, content_type, data):
             for key, value in element.attrib.items():
                 name = key.rsplit('}', 1)[-1].lower()
                 if (name.startswith('on') or name == 'base'
-                        or '@import' in value.lower() or 'javascript:' in value.lower()):
+                        or '@import' in value.lower() or 'javascript:' in value.lower()
+                        or '\\' in value or '/*' in value or '*/' in value):
                     raise ValueError(f'SVG inseguro: {url}')
                 if name in {'href', 'src'} and not value.startswith('#'):
                     if (element.tag != namespace + 'image'
@@ -182,7 +184,7 @@ def check_local_asset(url, content_type, data):
                     if not valid_png(embedded):
                         raise ValueError(f'SVG inseguro: {url}')
                 references = re.findall(r'url\(\s*["\']?([^"\')]+)', value, re.I)
-                if any(not ref.startswith('#') for ref in references):
+                if any(not re.fullmatch(r'#[\w.:-]+', ref.strip()) for ref in references):
                     raise ValueError(f'SVG inseguro: {url}')
     if suffix == '.png' and not valid_png(data):
         raise ValueError(f'PNG inválido: {url}')
@@ -209,24 +211,34 @@ def post_art_by_title(posts):
     """Derive optional article artwork expectations from source front matter."""
     artwork = {}
     agent_icon_languages = {}
+    approved_languages = []
     for source in posts.rglob('*.md'):
-        front_matter = re.match(r'\A---\s*\n(.*?)\n---', source.read_text(encoding='utf-8'), re.S)
+        front_matter = re.match(r'\A---\r?\n(.*?)\r?\n---(?:\r?\n|$)',
+                                source.read_text(encoding='utf-8'), re.S)
         if not front_matter:
             continue
-        fields = dict(re.findall(r'^([a-z_]+):[ \t]*(.*)$', front_matter.group(1), re.M))
-        image = fields.get('image', '').strip().strip('"\'')
+        try:
+            fields = yaml.safe_load(front_matter.group(1)) or {}
+        except yaml.YAMLError as error:
+            raise ValueError(f'Front matter inválido: {source}') from error
+        if not isinstance(fields, dict):
+            raise ValueError(f'Front matter inválido: {source}')
+        image = fields.get('image') or ''
         # The approved illustration must remain on this translated article pair.
-        if (fields.get('translation_key') == '2026-10-19-mudanca'
-                and image != '/assets/images/icon-agents.svg'):
-            raise ValueError(f'Ilustração aprovada ausente: {source}')
+        if fields.get('translation_key') == '2026-10-19-mudanca':
+            if image != '/assets/images/icon-agents.svg':
+                raise ValueError(f'Ilustração aprovada ausente: {source}')
+            approved_languages.append(fields.get('lang'))
         if not image:
             continue
         language = fields.get('lang')
-        title = fields.get('title', '').strip().strip('"\'')
-        alt = fields.get('image_alt', '').strip().strip('"\'')
+        title = fields.get('title')
+        alt = fields.get('image_alt')
         key = (language, title)
-        if (language not in ('pt', 'en') or not title or key in artwork
-                or not image.startswith('/assets/images/') or not alt):
+        if (language not in ('pt', 'en') or not isinstance(title, str) or not title.strip()
+                or not isinstance(alt, str) or not alt.strip() or key in artwork
+                or not isinstance(image, str)
+                or not image.startswith('/assets/images/')):
             raise ValueError(f'Metadados de imagem do post inválidos: {source}')
         artwork[key] = (image, alt)
         if image == '/assets/images/icon-agents.svg':
@@ -234,6 +246,9 @@ def post_art_by_title(posts):
             if not translation_key:
                 raise ValueError(f'Ícone dos agentes sem par traduzido: {source}')
             agent_icon_languages.setdefault(translation_key, set()).add(language)
+    if approved_languages and (len(approved_languages) != 2
+                               or set(approved_languages) != {'pt', 'en'}):
+        raise ValueError('Ilustração aprovada ausente do par PT/EN')
     if agent_icon_languages and (len(agent_icon_languages) != 1
                                  or next(iter(agent_icon_languages.values())) != {'pt', 'en'}):
         raise ValueError('O ícone dos agentes pertence a um único par PT/EN')
@@ -581,7 +596,7 @@ def check_feeds(base, pages):
                 raise ValueError(f'Item RSS sem GUID/categoria/data: {link}')
             if item.findtext('guid') != item.findtext('link'):
                 raise ValueError(f'GUID RSS não corresponde ao link permanente: {link}')
-            if item.findtext('category') not in category.split(' // '):
+            if [node.text for node in item.findall('category')] != category.split(' // '):
                 raise ValueError(f'Categoria RSS diferente do card: {link}')
             try:
                 published = parsedate_to_datetime(item.findtext('pubDate', ''))
@@ -719,8 +734,10 @@ def check_search(base, pages):
             raise ValueError(f'Busca deve ficar dentro de .header-container: {url}')
         widget = widgets[0]
         language = 'en' if url.startswith(urljoin(base, 'en/')) else 'pt'
-        if (widget.attrs.get('data-index-url') != urlsplit(index_url).path
-                or widget.attrs.get('data-lang') != language):
+        configured_index = urlsplit(widget.attrs.get('data-index-url', ''))
+        if (configured_index.path != urlsplit(index_url).path
+                or not re.fullmatch(r'v=\d+', configured_index.query)
+                or configured_index.fragment or widget.attrs.get('data-lang') != language):
             raise ValueError(f'Configuração da busca incorreta: {url}')
         controls = {}
         for marker, tag, identifier in (('data-search-input', 'input', 'site-search'),
@@ -769,7 +786,15 @@ def check_search(base, pages):
             raise ValueError(f'Link para posts sem JS ausente: {url}')
         scripts = [urljoin(url, node.attrs.get('src', ''))
                    for node in page.root.find('script') if node.attrs.get('src')]
-        if scripts.count(script_url) != 1:
+        search_scripts = [urlsplit(script) for script in scripts
+                          if urlsplit(script).path == urlsplit(script_url).path]
+        stylesheets = [urlsplit(urljoin(url, node.attrs.get('href', '')))
+                       for node in page.root.find('link')
+                       if 'stylesheet' in node.attrs.get('rel', '').split()]
+        if (len(search_scripts) != 1 or search_scripts[0].query != configured_index.query
+                or search_scripts[0].fragment
+                or not any(style.path == urlsplit(urljoin(base, 'assets/css/style.css')).path
+                           and style.query == configured_index.query for style in stylesheets)):
             raise ValueError(f'Script da busca ausente ou duplicado: {url}')
     with urlopen(index_url, timeout=10) as response:
         if (response.status != 200 or response.url != index_url

@@ -225,7 +225,9 @@ def main():
                 b'<svg xmlns="http://www.w3.org/2000/svg"><script/></svg>',
                 b'<svg xmlns="http://www.w3.org/2000/svg"><image href="https://example.invalid/icon.png"/></svg>',
                 b'<svg xmlns="http://www.w3.org/2000/svg" xml:base="https://example.invalid/"><image href="#remote"/></svg>',
-                b'<?xml-stylesheet type="text/css" href="https://example.invalid/a.css"?><svg xmlns="http://www.w3.org/2000/svg"/>'):
+                b'<?xml-stylesheet type="text/css" href="https://example.invalid/a.css"?><svg xmlns="http://www.w3.org/2000/svg"/>',
+                b'<svg xmlns="http://www.w3.org/2000/svg"><path fill="u\\72l(https://example.invalid/a.svg)"/></svg>',
+                b'<svg xmlns="http://www.w3.org/2000/svg"><path style="fill:u/**/rl(https://example.invalid/a.svg)"/></svg>'):
             expect_rejected(site_build, icon, unsafe_svg, 'SVG inseguro',
                             'SVG com script ou referência remota deve reprovar o build')
         png = next((site_build / 'assets/images').glob('*.png'))
@@ -259,6 +261,14 @@ def main():
         expect_rejected(site_build, site_build / 'credentials.json', b'{"fixture": true}\n',
                         'Arquivo privado no build',
                         'Um arquivo privado não previsto em lista de bloqueio deve reprovar o build')
+        private_dir = site_build / 'en/private'
+        private_dir.mkdir()
+        try:
+            expect_rejected(site_build, private_dir / 'index.html', b'<h1>Internal page</h1>',
+                            'Arquivo privado no build',
+                            'Um index.html extra sob en/ não deve ser publicado')
+        finally:
+            private_dir.rmdir()
         search_index = site_build / 'search.json'
         entries = json.loads(search_index.read_text(encoding='utf-8'))
         require(bool(entries), 'Fixture populada precisa ter posts no índice')
@@ -267,6 +277,14 @@ def main():
         expect_rejected(site_build, search_index, json.dumps(entries[:-1]).encode(),
                         'Índice não corresponde aos posts publicados',
                         'Índice sem um post publicado deve ser rejeitado')
+        rss = site_build / 'feed.xml'
+        original_rss = rss.read_text(encoding='utf-8')
+        require('<category>estudos</category>' in original_rss,
+                'Fixture precisa de RSS com múltiplas categorias')
+        expect_rejected(site_build, rss,
+                        original_rss.replace('<category>estudos</category>', '', 1).encode(),
+                        'Categoria RSS diferente do card',
+                        'Remover uma categoria do RSS deve reprovar o build')
         expect_rejected(site_build, site_build / 'other.json', b'[]',
                         'Arquivo privado no build',
                         'A allowlist deve aceitar somente search.json na raiz')
@@ -300,6 +318,18 @@ def main():
         else:
             raise AssertionError('Ícone aprovado não pode aparecer em outro par de artigos')
         extra_art.unlink()
+        folded_alt = posts / '2020-01-05-folded-alt.md'
+        folded_alt.write_text(
+            '---\nlayout: post\nlang: en\ntitle: "A title: with punctuation"\n'
+            'image: /assets/images/icon.svg\nimage_alt: >-\n'
+            '  A mascot with glasses\n  and a laptop\n---\n\nTest.\n')
+        try:
+            artwork = post_art_by_title(posts)
+            require(artwork[('en', 'A title: with punctuation')] ==
+                    ('/assets/images/icon.svg', 'A mascot with glasses and a laptop'),
+                    'Front matter YAML dobrado deve ser interpretado como Jekyll')
+        finally:
+            folded_alt.unlink()
         shutil.rmtree(posts)  # Only the scratch copy, never the repository's posts.
         for prefix in ('', '/site'):
             build_and_check(source, root, prefix, populated=False)

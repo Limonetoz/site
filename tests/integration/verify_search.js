@@ -71,13 +71,13 @@ const posts = [
   ...Array.from({ length: 8 }, (_, n) => ({ lang: 'pt', title: `Item ${n}`, description: 'term comum', categories: ['tutorial'], url: `/site/posts/item-${n}/` })),
 ];
 
-async function scenario(language, failed = false) {
+async function scenario(language, { basePath = '/site', failFirst = false, empty = false, delayed = false } = {}) {
   const root = new Node();
   const widget = new Node('div');
   widget.attrs['data-search'] = '';
-  widget.attrs['data-index-url'] = '/site/search.json';
+  widget.attrs['data-index-url'] = `${basePath}/search.json?v=123`;
   widget.attrs['data-lang'] = language;
-  widget.dataset = { indexUrl: '/site/search.json', lang: language };
+  widget.dataset = { indexUrl: `${basePath}/search.json?v=123`, lang: language };
   const input = new Node('input'); input.attrs['data-search-input'] = '';
   const results = new Node('ul'); results.attrs['data-search-results'] = '';
   const status = new Node('p'); status.attrs['data-search-status'] = '';
@@ -87,6 +87,11 @@ async function scenario(language, failed = false) {
     found: 'Found', error: 'Search failed' };
   widget.append(input, results, status); root.append(widget);
   let requested = 0;
+  let release;
+  const fixturePosts = empty ? [] : posts.map(post => ({ ...post,
+    url: basePath ? post.url : post.url === '/other/posts/trap/'
+      ? '//example.invalid/posts/trap/' : post.url.replace(/^\/site\//, '/'),
+  }));
   const document = {
     readyState: 'complete',
     querySelector: selector => root.querySelector(selector),
@@ -95,14 +100,15 @@ async function scenario(language, failed = false) {
     addEventListener(name, handler) { (this.listeners[name] ??= []).push(handler); },
     listeners: {},
   };
-  const window = { location: { href: 'https://example.test/site/', origin: 'https://example.test',
+  const window = { location: { href: `https://example.test${basePath}/`, origin: 'https://example.test',
     assign(url) { this.href = url; } }, document };
   const context = { document, window, console, URL, setTimeout, clearTimeout,
     fetch: async url => {
       requested++;
-      assert.equal(String(url), 'https://example.test/site/search.json', 'Fetch must use the configured baseurl');
-      if (failed) throw Error('network unavailable');
-      return { ok: true, json: async () => posts };
+      assert.equal(String(url), `https://example.test${basePath}/search.json?v=123`, 'Fetch must use the configured baseurl and cache version');
+      if (failFirst && requested === 1) throw Error('network unavailable');
+      if (delayed) await new Promise(resolve => { release = resolve; });
+      return { ok: true, json: async () => fixturePosts };
     },
   };
   window.fetch = context.fetch;
@@ -114,17 +120,38 @@ async function scenario(language, failed = false) {
   await search('');
   assert.equal(results.querySelectorAll('a').length, 0, 'Empty input should have no results');
   assert.equal(status.textContent, status.dataset.empty, 'Empty status');
-  if (failed) {
+  if (failFirst) {
     await search('cafe');
     assert.equal(results.querySelectorAll('a').length, 0, 'Network errors must not show stale results');
     assert.equal(status.textContent, status.dataset.error, 'Network failure needs an error status');
     assert.equal(results.textContent, status.dataset.error, 'Network error must be visible in the results panel');
-    return;
+    await search('cafe');
+    assert.equal(requested, 2, 'Typing after an error retries the fetch');
+    assert.equal(results.querySelectorAll('a').length, 1, 'Retry must recover');
+  }
+  if (delayed) {
+    input.value = 'cafe'; input.dispatch('input');
+    assert.equal(status.textContent, status.dataset.loading);
+    input.value = 'segundo'; input.dispatch('input');
+    assert.equal(requested, 1, 'Overlapping searches share one fetch');
+    release();
+    await tick();
+    assert.equal(results.querySelectorAll('a').length, 1);
+    assert.equal(results.querySelector('a').textContent, 'Segundo artigo', 'Older query must not overwrite newer results');
+    await search('cafe');
+    input.value = 'segundo'; input.dispatch('input');
+    await tick();
+    assert.equal(results.querySelector('a').textContent, 'Segundo artigo', 'Cached out-of-order results must not overwrite the latest query');
   }
   await search(language === 'pt' ? 'CAFE arVore' : 'cafe tree');
   let links = results.querySelectorAll('a');
-  assert.equal(links.length, 1, `All terms, accent/case folding, and language filtering (status: ${status.textContent}; fetches: ${requested})`);
-  assert.equal(links[0].getAttribute('href'), language === 'pt' ? '/site/posts/cafe/' : '/site/en/posts/coffee/');
+  assert.equal(links.length, empty ? 0 : 1, `All terms, accent/case folding, and language filtering (status: ${status.textContent}; fetches: ${requested})`);
+  if (empty) {
+    assert.equal(status.textContent, status.dataset.none, 'Empty index must show no-results state');
+    assert.equal(results.textContent, status.dataset.none);
+    return;
+  }
+  assert.equal(links[0].getAttribute('href'), `${basePath}${language === 'pt' ? '/posts/cafe/' : '/en/posts/coffee/'}`);
   if (language === 'pt') {
     assert.equal(links[0].querySelector('img'), null, 'Index title must remain text, not HTML');
     await search('TECNOLOGIA');
@@ -151,6 +178,10 @@ async function scenario(language, failed = false) {
 (async () => {
   await scenario('pt');
   await scenario('en');
-  await scenario('pt', true);
-  console.log('PASS busca localizada, filtro, teclado, erro e texto seguro');
+  await scenario('pt', { basePath: '' });
+  await scenario('en', { basePath: '' });
+  await scenario('pt', { failFirst: true });
+  await scenario('pt', { empty: true });
+  await scenario('pt', { delayed: true });
+  console.log('PASS busca localizada, baseurl, filtro, teclado, retry, concorrência e texto seguro');
 })().catch(error => { console.error(error); process.exitCode = 1; });

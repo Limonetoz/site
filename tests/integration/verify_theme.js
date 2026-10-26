@@ -43,9 +43,10 @@ function scenario(systemDark, saved, storageFails = false, language = 'pt') {
     documentElement: root,
     readyState: 'loading',
     getElementById(id) {
-      return id === 'theme-toggle' ? button : id === 'theme-color' ? browserColor : null;
+      return id === 'theme-toggle' ? (this.readyState === 'loading' ? null : button)
+        : id === 'theme-color' ? browserColor : null;
     },
-    querySelector(selector) { return selector === '#theme-toggle' ? button : null; },
+    querySelector(selector) { return selector === '#theme-toggle' ? this.getElementById('theme-toggle') : null; },
     addEventListener(type, callback) { handlers[`document:${type}`] = callback; },
   };
   const context = {
@@ -73,10 +74,14 @@ function scenario(systemDark, saved, storageFails = false, language = 'pt') {
   context.window.localStorage = context.localStorage;
   context.matchMedia = context.window.matchMedia;
   vm.runInNewContext(source, context, { timeout: 1000, filename: 'theme.js' });
+  const initial = saved || (systemDark ? 'dark' : 'light');
+  assert.equal(root.getAttribute('data-theme'), initial,
+    'theme must be applied while the head is parsed, before DOMContentLoaded');
+  assert.equal(button.hidden, true, 'button does not exist while the head is parsed');
+  document.readyState = 'complete';
   for (const name of ['document:DOMContentLoaded', 'window:load']) {
     if (handlers[name]) handlers[name]();
   }
-  const initial = saved || (systemDark ? 'dark' : 'light');
   assert.equal(root.getAttribute('data-theme'), initial,
     `initial theme with systemDark=${systemDark}, saved=${saved}`);
   assert.equal(button.hidden, false, 'toggle must become visible');

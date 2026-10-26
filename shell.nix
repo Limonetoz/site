@@ -4,7 +4,7 @@ pkgs.mkShell {
   buildInputs = with pkgs; [
     nodejs
     jekyll
-    (python3.withPackages (ps: [ ps.pillow ]))
+    (python3.withPackages (ps: [ ps.pillow ps.pyyaml ]))
   ];
 
   shellHook = ''

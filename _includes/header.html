@@ -27,7 +27,7 @@
           data-theme-activate-light="{{ t.theme_activate_light | escape }}">{{ t.theme | escape }}</button></li>
       </ul>
     </nav>
-    <div class="search" data-search data-index-url="{{ '/search.json' | relative_url | escape }}" data-lang="{{ language | escape }}" hidden>
+    <div class="search" data-search data-index-url="{{ '/search.json' | relative_url }}?v={{ site.time | date: '%s' }}" data-lang="{{ language | escape }}" hidden>
       <label class="search-label" for="site-search">{{ t.search_label | escape }}</label>
       <input id="site-search" class="search-input" type="search" autocomplete="off" data-search-input
         placeholder="{{ t.search_placeholder | escape }}" aria-describedby="search-status" aria-controls="search-results">
