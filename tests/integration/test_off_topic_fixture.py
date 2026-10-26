@@ -126,7 +126,7 @@ def build_and_check(source, root, prefix, populated):
             card_url = locale_home[title]
             home_page = parse(output / ('en/index.html' if language == 'en' else 'index.html'))
             card = next(card for card in one(home_page.root, 'main').find('article')
-                        if any(heading.text() == title for heading in card.find('h3')))
+                        if any(heading.text() == title for heading in card.find('h2')))
             require(one(card, 'span', 'post-category').text() == ' // '.join(labels),
                     f'Categorias do card {language} incorretas')
             detail = parse(generated_path(output, card_url, prefix))

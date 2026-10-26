@@ -31,15 +31,6 @@
 </head>
 <body>
   <a class="skip-link" href="#conteudo">{{ t.skip | escape }}</a>
-  {% if page.home %}
-    <div class="background" aria-hidden="true">
-      <span class="shape shape-square"></span>
-      <span class="shape shape-circle"></span>
-      <span class="shape shape-triangle"></span>
-      <span class="shape shape-cross"></span>
-    </div>
-  {% endif %}
-
   {% include header.html %}
 
   {{ content }}

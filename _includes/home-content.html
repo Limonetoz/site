@@ -2,45 +2,18 @@
 {% assign t = site.data.i18n[language] %}
 {% assign localized_posts = site.posts | where: 'lang', language %}
 <main id="conteudo">
-  <section class="intro container" id="inicio">
-    <div class="profile-area">
-      <div class="profile-frame" aria-hidden="true"></div>
-      <article class="profile-card">
-        <div class="profile-image">
-          <img
-            src="{{ '/assets/images/icon.svg' | relative_url }}"
-            alt="{% if language == 'en' %}4LagDev mascot: a lime-green invader wearing round glasses{% else %}Mascote do 4LagDev: invasor verde-limão de óculos redondos{% endif %}"
-            width="512"
-            height="512"
-          >
-        </div>
-        <div class="profile-info">
-          <h1>4LagDev</h1>
-          <p>{{ t.developer | escape }}</p>
-        </div>
-      </article>
-    </div>
-
-    <div class="content">
-      <p class="system-label">{{ t.home_top | escape }}</p>
-      <p class="description">{{ t.home_intro | escape }}</p>
-      <div class="actions">
-        <a class="button button-primary" href="#posts">{{ t.explore | escape }}</a>
-      </div>
-    </div>
-  </section>
-  <section class="section container" id="posts">
+  <section class="section home-posts container" id="posts">
     <header class="section-heading">
       <div>
         <span class="section-index">{{ t.recent | escape }}</span>
-        <h2>{{ t.posts | escape }}</h2>
+        <h1>{{ t.posts | escape }}</h1>
       </div>
       <p>{{ t.recent_description | escape }}</p>
     </header>
 
     <div class="posts-list">
       {% for post in localized_posts %}
-        {% include post-card.html post=post heading_level=3 %}
+        {% include post-card.html post=post heading_level=2 %}
       {% else %}
         <p class="posts-empty">{{ t.empty_posts | escape }} <code>_posts/AAAA-MM-DD-nome-do-post.md</code>.</p>
       {% endfor %}

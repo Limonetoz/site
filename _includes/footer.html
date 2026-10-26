@@ -2,7 +2,7 @@
   <div class="footer-container container">
     <p>© 2026 4LagDev // {{ t.footer | escape }}</p>
     <nav class="footer-links" aria-label="{{ t.secondary_nav | escape }}">
-      <a href="{% if page.home %}#inicio{% else %}{{ t.home_url | relative_url }}{% endif %}">{{ t.footer_home | escape }}</a>
+      <a href="{% if page.home %}#posts{% else %}{{ t.home_url | relative_url }}{% endif %}">{{ t.footer_home | escape }}</a>
       <a href="{{ t.home_url | append: 'sobre/' | relative_url }}">{{ t.about | escape }}</a>
       <a href="https://github.com/Limonetoz/site" target="_blank" rel="noopener noreferrer" aria-label="{{ t.github_repo | escape }}">GitHub</a>
     </nav>

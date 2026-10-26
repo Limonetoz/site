@@ -260,10 +260,17 @@ def check_blog(base, pages, artwork):
     language = 'en' if base.rstrip('/').endswith('/en') else 'pt'
     art_pages = set()
     check_post_navigation(home, base, base)
+    main = one(home.root, 'main')
     posts = [node for node in home.root.find('section')
-             if node.attrs.get('id') == 'posts']
+              if node.attrs.get('id') == 'posts']
     if len(posts) != 1:
         raise ValueError('Seção #posts ausente ou duplicada')
+    if (len([node for node in main.children if isinstance(node, Element)]) != 1
+            or posts[0] not in main.children
+            or 'home-posts' not in posts[0].attrs.get('class', '').split()
+            or one(posts[0], 'h1').text() != ('Posts')
+            or list(main.find('img'))):
+        raise ValueError('Home deve exibir somente o feed de posts')
     cards = list(posts[0].find('article'))
     if not cards:
         empty = [node for node in posts[0].find('p', 'posts-empty')
@@ -516,8 +523,8 @@ def check_localization(base, pages):
     for url in en_posts:
         if not url.startswith(english):
             raise ValueError(f'Post PT vazou para página EN: {url}')
-    if one(pages[base].root, 'p', 'description').text() == one(
-            pages[english].root, 'p', 'description').text():
+    if one(one(pages[base].root, 'header', 'section-heading'), 'p').text() == one(
+            one(pages[english].root, 'header', 'section-heading'), 'p').text():
         raise ValueError(f'Descrição inicial não foi localizada: {english}')
     about_pt = urljoin(base, 'sobre/')
     about_en = counterparts[about_pt]
@@ -847,6 +854,15 @@ def check_navigation(base, pages):
         about = urljoin(home, 'sobre/')
         header = one(page.root, 'header', 'header')
         container = one(header, 'div', 'header-container')
+        logo = one(container, 'a', 'logo')
+        mascot = one(logo, 'img', 'logo-mascot')
+        if (mascot.attrs.get('alt') != '' or mascot.attrs.get('width') != '36'
+                or mascot.attrs.get('height') != '36'
+                or urljoin(url, mascot.attrs.get('src', '')) !=
+                urljoin(base, 'assets/images/icon.svg')
+                or urljoin(url, logo.attrs.get('href', '')) !=
+                (home + '#posts' if url == home else home)):
+            raise ValueError(f'Mascote do cabeçalho ausente ou destino incorreto: {url}')
         primary = one(header, 'nav', 'navigation')
         actions = one(container, 'div', 'header-actions')
         footer = one(page.root, 'footer', 'footer')

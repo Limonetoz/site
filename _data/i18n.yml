@@ -30,10 +30,6 @@ pt:
   rss: Assinar o feed RSS
   rss_title: Novos artigos em português
   footer: Site estático
-  home_top: Um arquivo pessoal sobre estudos e artigos
-  home_intro: Um histórico do que ando trabalhando.
-  developer: Desenvolvedor
-  explore: Explorar posts
   recent: 01 // arquivos recentes
   recent_description: Publicações recentes.
   empty_posts: Nenhum post publicado ainda. Adicione arquivos em
@@ -92,10 +88,6 @@ en:
   rss: Subscribe to the RSS feed
   rss_title: New articles in English
   footer: Static site
-  home_top: A personal archive of studies and articles
-  home_intro: A record of what I've been working on.
-  developer: Developer
-  explore: Explore posts
   recent: 01 // recent posts
   recent_description: Recent writing.
   empty_posts: No posts published yet. Add files under

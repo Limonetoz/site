@@ -6,8 +6,8 @@
 {% endif %}
 <header class="header">
   <div class="header-container container">
-    <a class="logo" href="{% if page.home %}#inicio{% else %}{{ t.home_url | relative_url }}{% endif %}" aria-label="{{ t.back_home | escape }}">
-      <span class="logo-mark" aria-hidden="true"></span>
+    <a class="logo" href="{% if page.home %}#posts{% else %}{{ t.home_url | relative_url }}{% endif %}" aria-label="{{ t.back_home | escape }}">
+      <img class="logo-mascot" src="{{ '/assets/images/icon.svg' | relative_url }}" alt="" width="36" height="36">
       <span class="logo-name">Code4lag_</span>
     </a>
 
