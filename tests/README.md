@@ -30,8 +30,10 @@
   ou mensagem explícita quando vazio;
 - navegação Tutorial para `/posts/tutorial/`, arquivo com somente os posts
   categorizados `tutorial` ou mensagem explícita quando vazio;
-- navegação principal sem Sobre/GitHub, preservando Posts, Tutorial, Off-topic,
-  RSS, idioma e tema; Sobre localizado no rodapé com destino `/sobre/` ou
+- navegação principal sem Sobre/GitHub, preservando Posts, Tutorial, Off-topic
+  e RSS; busca, idioma e tema agrupados nas ações do cabeçalho, com menu compacto
+  para telas menores, acessível por teclado e navegação disponível sem JS;
+  Sobre localizado no rodapé com destino `/sobre/` ou
   `/en/sobre/` sob o prefixo correto; página Sobre com três links de perfil exatos
   (GitHub, Codeberg e LinkedIn), seguros e acessíveis, com ícones locais SVG e PNG por HTTP;
 - fontes referenciadas por `@font-face` e utilizadas pelo CSS servidas por HTTP,
@@ -42,7 +44,7 @@
 - feeds RSS 2.0 `/feed.xml` e `/en/feed.xml`, descobertos por `<link>` em cada
   página e acessíveis no cabeçalho: HTTP/MIME/XML, idioma, metadados e itens
   idênticos aos posts da listagem de cada idioma, sem vazamento entre idiomas;
-- busca PT/EN dentro de `.header-container` junto à navegação em todas as páginas,
+- busca PT/EN dentro de `.header-actions` junto à navegação em todas as páginas,
   com IDs, atributos e rótulos acessíveis localizados, inicialmente oculta sem JS e
   com link para posts disponível; `/search.json` por HTTP/MIME corresponde
   exatamente aos posts publicados, suas descrições, categorias localizadas e

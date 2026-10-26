@@ -55,6 +55,7 @@ o feed publica novos artigos, mas o site não envia notificações push por cont
 A busca no cabeçalho pesquisa títulos, resumos e categorias dos posts no idioma
 da página. O Jekyll gera `search.json` no build; o navegador consulta esse índice
 localmente, sem serviço externo. Sem JavaScript, o link Posts permanece disponível.
+Em telas menores, a navegação fica em um menu; a busca continua visível.
 Os links Sobre e GitHub do site ficam no rodapé para manter o cabeçalho compacto.
 
 Para incluir um artigo na subcategoria **Off-topic**, use
@@ -111,6 +112,7 @@ site/
 │   ├── css/style.css            # Estilos do site
 │   ├── js/theme.js              # Alternância de tema
 │   ├── js/search.js             # Busca local no cabeçalho
+│   ├── js/menu.js               # Menu responsivo de navegação
 │   ├── images/                  # Mascote e ícones dos perfis
 │   └── fonts/                   # JetBrains Mono WOFF2 e OFL.txt
 ├── tests/
