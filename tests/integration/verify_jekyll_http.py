@@ -727,11 +727,12 @@ def check_search(base, pages):
     for url, page in pages.items():
         header = one(page.root, 'header', 'header')
         container = one(header, 'div', 'header-container')
+        actions = one(container, 'div', 'header-actions')
         widgets = [node for node in page.root.find() if 'data-search' in node.attrs]
         if (len(widgets) != 1 or widgets[0].tag != 'div'
                 or 'search' not in widgets[0].attrs.get('class', '').split()
-                or widgets[0] not in container.children):
-            raise ValueError(f'Busca deve ficar dentro de .header-container: {url}')
+                or actions not in container.children or widgets[0] not in actions.children):
+            raise ValueError(f'Busca deve ficar dentro de .header-actions: {url}')
         widget = widgets[0]
         language = 'en' if url.startswith(urljoin(base, 'en/')) else 'pt'
         configured_index = urlsplit(widget.attrs.get('data-index-url', ''))
@@ -838,6 +839,7 @@ def check_search(base, pages):
 
 def check_navigation(base, pages):
     english = urljoin(base, 'en/')
+    menu_script = urljoin(base, 'assets/js/menu.js')
     repository = 'https://github.com/Limonetoz/site'
     for url, page in pages.items():
         language = 'en' if url.startswith(english) else 'pt'
@@ -846,10 +848,12 @@ def check_navigation(base, pages):
         header = one(page.root, 'header', 'header')
         container = one(header, 'div', 'header-container')
         primary = one(header, 'nav', 'navigation')
+        actions = one(container, 'div', 'header-actions')
         footer = one(page.root, 'footer', 'footer')
         footer_container = one(footer, 'div', 'footer-container')
         secondary = one(footer, 'nav', 'footer-links')
-        if primary not in container.children or secondary not in footer_container.children:
+        if (primary not in container.children or actions not in container.children
+                or secondary not in footer_container.children):
             raise ValueError(f'Navegação fora do contêiner esperado: {url}')
         if (primary.attrs.get('aria-label') !=
                 ('Main navigation' if language == 'en' else 'Navegação principal')
@@ -890,12 +894,37 @@ def check_navigation(base, pages):
                      urljoin(url, link.attrs.get('href', '')) == target]
             if len(links) != 1:
                 raise ValueError(f'Link {label} ausente da navegação principal: {url}')
-        if len([node for node in primary.find('button')
+        if len([node for node in actions.find('button')
                 if node.attrs.get('id') == 'theme-toggle']) != 1:
-            raise ValueError(f'Alternância de tema fora da navegação principal: {url}')
-        if len([link for link in primary_links if link.text().strip() ==
-                ('PT' if language == 'en' else 'EN')]) != 1:
-            raise ValueError(f'Alternância de idioma fora da navegação principal: {url}')
+            raise ValueError(f'Alternância de tema fora das ações do cabeçalho: {url}')
+        languages = one(actions, 'div', 'language-switch')
+        switch = list(languages.find('a'))
+        active = [node for node in languages.find('span') if node.attrs.get('aria-current') == 'page']
+        if (languages.attrs.get('role') != 'group' or languages.attrs.get('aria-label') !=
+                ('Language' if language == 'en' else 'Idioma')
+                or len(switch) != 1 or switch[0].text() != ('PT' if language == 'en' else 'EN')
+                or len(active) != 1 or active[0].text() != language.upper()):
+            raise ValueError(f'Alternância de idioma fora das ações do cabeçalho: {url}')
+        toggles = [node for node in actions.find('button')
+                   if 'menu-toggle' in node.attrs.get('class', '').split()]
+        if (len(toggles) != 1 or toggles[0].attrs.get('aria-controls') != primary.attrs.get('id')
+                or toggles[0].attrs.get('aria-expanded') != 'false'
+                or toggles[0].attrs.get('aria-label') != 'Menu'
+                or 'hidden' not in toggles[0].attrs or toggles[0].text() != 'Menu'):
+            raise ValueError(f'Menu responsivo inacessível: {url}')
+        scripts = [urljoin(url, node.attrs.get('src', '')) for node in page.root.find('script')
+                   if node.attrs.get('src')]
+        if len([script for script in scripts if urlsplit(script).path == urlsplit(menu_script).path]) != 1:
+            raise ValueError(f'Script do menu ausente ou duplicado: {url}')
+    with urlopen(menu_script, timeout=10) as response:
+        if response.status != 200 or response.headers.get_content_type() not in (
+                'application/javascript', 'text/javascript'):
+            raise ValueError(f'Script do menu indisponível: {menu_script}')
+        source = response.read().decode('utf-8')
+    result = subprocess.run(['node', str(Path(__file__).with_name('verify_menu.js'))],
+                            input=source, text=True, capture_output=True, check=False)
+    if result.returncode:
+        raise ValueError(f'Script do menu falhou: {menu_script}: {result.stderr.strip()}')
 
 
 def verify(base):

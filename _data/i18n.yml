@@ -2,6 +2,8 @@ pt:
   html_lang: pt-BR
   home_url: /
   nav_label: Navegação principal
+  language_label: Idioma
+  menu: Menu
   secondary_nav: Links secundários
   back_home: Voltar ao início
   footer_home: Início
@@ -62,6 +64,8 @@ en:
   html_lang: en
   home_url: /en/
   nav_label: Main navigation
+  language_label: Language
+  menu: Menu
   secondary_nav: Secondary links
   back_home: Back to home
   footer_home: Home

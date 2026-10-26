@@ -216,7 +216,7 @@ def main():
         require(len(search) == 1, 'Fixture precisa de busca única para testar posição')
         outside = home_html.replace(search[0], '', 1).replace('</header>', search[0] + '</header>', 1)
         expect_rejected(site_build, home_page, outside.encode(),
-                        'Busca deve ficar dentro de .header-container',
+                        'Busca deve ficar dentro de .header-actions',
                         'Busca fora do contêiner do cabeçalho deve falhar')
         icon = site_build / 'assets/images/icon.svg'
         expect_rejected(site_build, icon, b'not-an-svg', 'SVG inválido',
