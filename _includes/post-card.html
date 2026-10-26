@@ -3,13 +3,7 @@
   <div class="post-symbol" aria-hidden="true">&gt;</div>
   <div class="post-content">
     <span class="post-category">
-      {% if include.category %}
-        {{ include.category | escape }}
-      {% elsif post.categories and post.categories != empty %}
-        {% for category in post.categories %}{% assign translated_category = t.categories[category] | default: category %}{{ translated_category | escape }}{% unless forloop.last %} // {% endunless %}{% endfor %}
-      {% else %}
-        {{ t.posts | escape }}
-      {% endif %}
+      {% include post-categories.html post=post label=include.category %}
     </span>
     <h{{ include.heading_level }}><a href="{{ post.url | relative_url }}">{{ post.title | escape }}</a></h{{ include.heading_level }}>
     <p>{{ post.excerpt | strip_html | strip_newlines | truncate: 160 | escape }}</p>

@@ -17,11 +17,7 @@
         <guid isPermaLink="true">{{ post.url | absolute_url | xml_escape }}</guid>
         <pubDate>{{ post.date | date_to_rfc822 }}</pubDate>
         <description>{{ post.excerpt | strip_html | strip_newlines | xml_escape }}</description>
-        {% if post.categories and post.categories != empty %}
-          {% for category in post.categories %}{% assign translated_category = t.categories[category] | default: category %}<category>{{ translated_category | xml_escape }}</category>{% endfor %}
-        {% else %}
-          <category>{{ t.posts | xml_escape }}</category>
-        {% endif %}
+        {% include post-categories.html post=post rss=true %}
       </item>
     {% endfor %}
   </channel>

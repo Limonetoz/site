@@ -1,0 +1,17 @@
+{%- assign category_post = include.post -%}
+{%- if include.label -%}
+  {{- include.label | escape -}}
+{%- elsif category_post.categories and category_post.categories != empty -%}
+  {%- for category in category_post.categories -%}
+    {%- assign translated_category = t.categories[category] | default: category -%}
+    {%- if include.rss -%}
+      <category>{{ translated_category | xml_escape }}</category>
+    {%- else -%}
+      {{- translated_category | escape -}}{%- unless forloop.last -%}{{ ' // ' }}{%- endunless -%}
+    {%- endif -%}
+  {%- endfor -%}
+{%- elsif include.rss -%}
+  <category>{{ t.posts | xml_escape }}</category>
+{%- else -%}
+  {{- t.posts | escape -}}
+{%- endif -%}

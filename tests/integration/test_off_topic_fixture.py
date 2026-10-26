@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import xml.etree.ElementTree as ET
 import zlib
 from pathlib import Path
 from urllib.parse import urljoin, urlsplit
@@ -118,6 +119,23 @@ def build_and_check(source, root, prefix, populated):
         check_archive(output, prefix, language, category, locale_home, expected,
                       excluded, populated)
     if populated:
+        for language, title, labels, locale_home in (
+                ('pt', ANOTHER_TUTORIAL, ['tutorial', 'estudos'], home),
+                ('en', EN_ANOTHER_TUTORIAL, ['Tutorial', 'Studies'], english_cards)):
+            card_url = locale_home[title]
+            home_page = parse(output / ('en/index.html' if language == 'en' else 'index.html'))
+            card = next(card for card in one(home_page.root, 'main').find('article')
+                        if any(heading.text() == title for heading in card.find('h3')))
+            require(one(card, 'span', 'post-category').text() == ' // '.join(labels),
+                    f'Categorias do card {language} incorretas')
+            detail = parse(generated_path(output, card_url, prefix))
+            require(one(detail.root, 'span', 'post-category').text() == ' // '.join(labels),
+                    f'Categorias do artigo {language} incorretas')
+            feed_path = output / ('en/feed.xml' if language == 'en' else 'feed.xml')
+            items = ET.parse(feed_path).findall('./channel/item')
+            item = next(item for item in items if item.findtext('title') == title)
+            require([category.text for category in item.findall('category')] == labels,
+                    f'Categorias RSS {language} incorretas')
         require({EN_TOPIC, EN_OTHER, EN_TUTORIAL, EN_ANOTHER_TUTORIAL} <= set(english_cards),
                 'Fixtures EN não renderizaram')
         require(not {TOPIC, OTHER, TUTORIAL, ANOTHER_TUTORIAL} & set(english_cards),
@@ -167,13 +185,14 @@ def main():
             'permalink: /posts/:year/:month/:day/:title/\n---\n\nConteúdo teste.\n')
         (posts / '2020-01-04-fixture-another-tutorial.md').write_text(
             '---\nlayout: post\ntitle: Fixture segundo tutorial\n'
-            'lang: pt\ntranslation_key: fixture-another-tutorial\ncategories: [tutorial]\n'
+            'lang: pt\ntranslation_key: fixture-another-tutorial\ncategories: [tutorial, estudos]\n'
             'permalink: /posts/:year/:month/:day/:title/\n---\n\nOutro conteúdo de teste.\n')
         for day, slug, key, title, category in (
                 ('01', 'topic-en', 'fixture-topic', EN_TOPIC, 'off-topic'),
                 ('02', 'other-en', 'fixture-other', EN_OTHER, 'studies'),
                 ('03', 'tutorial-en', 'fixture-tutorial', EN_TUTORIAL, 'tutorial'),
-                ('04', 'another-tutorial-en', 'fixture-another-tutorial', EN_ANOTHER_TUTORIAL, 'tutorial')):
+                 ('04', 'another-tutorial-en', 'fixture-another-tutorial',
+                  EN_ANOTHER_TUTORIAL, 'tutorial, studies')):
             (posts / f'2020-01-{day}-{slug}.md').write_text(
                 f'---\nlayout: post\nlang: en\ntranslation_key: {key}\n'
                 f'title: {title}\ncategories: [{category}]\n'
