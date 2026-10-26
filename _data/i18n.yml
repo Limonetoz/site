@@ -30,10 +30,13 @@ pt:
   open: Abrir
   back_posts: ← Voltar aos posts
   archive_index: 02 // arquivo
-  tutorial_description: Guias e tutoriais do blog.
-  off_topic_description: Textos fora dos temas habituais.
-  tutorial_empty: Nenhum tutorial publicado ainda.
-  off_topic_empty: Nenhum post Off-topic publicado ainda.
+  archives:
+    tutorial:
+      description: Guias e tutoriais do blog.
+      empty: Nenhum tutorial publicado ainda.
+    off-topic:
+      description: Textos fora dos temas habituais.
+      empty: Nenhum post Off-topic publicado ainda.
   about_index: 03 // onde me encontrar
   about_description: "Um arquivo pessoal sobre estudos, tecnologia e projetos. Meus perfis estão aqui:"
   about_profiles: Perfis
@@ -79,10 +82,13 @@ en:
   open: Open
   back_posts: ← Back to posts
   archive_index: 02 // archive
-  tutorial_description: Guides and tutorials from the blog.
-  off_topic_description: Writing beyond the usual topics.
-  tutorial_empty: No tutorials published yet.
-  off_topic_empty: No Off-topic posts published yet.
+  archives:
+    tutorial:
+      description: Guides and tutorials from the blog.
+      empty: No tutorials published yet.
+    off-topic:
+      description: Writing beyond the usual topics.
+      empty: No Off-topic posts published yet.
   about_index: 03 // where to find me
   about_description: "A personal archive of studies, technology and projects. You can find me here:"
   about_profiles: Profiles

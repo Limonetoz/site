@@ -1,5 +1,6 @@
 {% assign language = page.lang | default: 'pt' %}
 {% assign t = site.data.i18n[language] %}
+{% assign archive = t.archives[page.category] %}
 {% assign category_posts = site.categories[page.category] | where: 'lang', language %}
 <main class="post-page container" id="conteudo">
   <a class="post-back" href="{{ t.home_url | relative_url }}#posts">{{ t.back_posts | escape }}</a>
@@ -9,13 +10,13 @@
         <span class="section-index">{{ t.archive_index | escape }}</span>
         <h1 id="archive-title">{{ page.title | escape }}</h1>
       </div>
-      <p>{% if page.category == 'tutorial' %}{{ t.tutorial_description | escape }}{% else %}{{ t.off_topic_description | escape }}{% endif %}</p>
+      <p>{{ archive.description | escape }}</p>
     </header>
     <div class="posts-list">
       {% for post in category_posts %}
         {% include post-card.html post=post heading_level=2 category=page.title %}
       {% else %}
-        <p class="posts-empty">{% if page.category == 'tutorial' %}{{ t.tutorial_empty | escape }}{% else %}{{ t.off_topic_empty | escape }}{% endif %}</p>
+        <p class="posts-empty">{{ archive.empty | escape }}</p>
       {% endfor %}
     </div>
   </section>
