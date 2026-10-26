@@ -12,7 +12,8 @@
   remotas e PNGs decodificáveis;
 - apenas páginas, feeds, CSS, JS, imagens, fontes e licença de fonte permitidos
   no artefato; novos tipos de arquivo exigem revisão da lista de publicação;
-- link do repositório e proteção `noopener` em links que abrem nova aba;
+- link único do repositório no `nav.footer-links` de todas as páginas, com
+  rótulo acessível PT/EN, `target="_blank"` e `rel="noopener noreferrer"`;
 - cards de posts com título, resumo e link para a página publicada; se não houver
   artigos, mensagem explícita de lista vazia;
 - título, categoria e data ISO/data visível consistentes entre card e artigo;
@@ -29,8 +30,10 @@
   ou mensagem explícita quando vazio;
 - navegação Tutorial para `/posts/tutorial/`, arquivo com somente os posts
   categorizados `tutorial` ou mensagem explícita quando vazio;
-- navegação Sobre, página em `/sobre/`, três links de perfil exatos (GitHub,
-  Codeberg e LinkedIn), seguros e acessíveis, com ícones locais SVG e PNG por HTTP;
+- navegação principal sem Sobre/GitHub, preservando Posts, Tutorial, Off-topic,
+  RSS, idioma e tema; Sobre localizado no rodapé com destino `/sobre/` ou
+  `/en/sobre/` sob o prefixo correto; página Sobre com três links de perfil exatos
+  (GitHub, Codeberg e LinkedIn), seguros e acessíveis, com ícones locais SVG e PNG por HTTP;
 - fontes referenciadas por `@font-face` e utilizadas pelo CSS servidas por HTTP,
   com MIME e conteúdo WOFF2 decodificáveis em `/` e `/site`, sem fixar nome ou peso;
 - `/en/`, `/en/sobre/`, arquivos `/en/posts/…/` e posts em inglês com
@@ -38,7 +41,13 @@
   apontando de volta à página equivalente (inclusive artigo);
 - feeds RSS 2.0 `/feed.xml` e `/en/feed.xml`, descobertos por `<link>` em cada
   página e acessíveis no cabeçalho: HTTP/MIME/XML, idioma, metadados e itens
-  idênticos aos posts da listagem de cada idioma, sem vazamento entre idiomas.
+  idênticos aos posts da listagem de cada idioma, sem vazamento entre idiomas;
+- busca PT/EN dentro de `.header-container` junto à navegação em todas as páginas,
+  com IDs, atributos e rótulos acessíveis localizados, inicialmente oculta sem JS e
+  com link para posts disponível; `/search.json` por HTTP/MIME corresponde
+  exatamente aos posts publicados, suas descrições, categorias localizadas e
+  URLs com prefixo; `search.js` é executado em Node VM para filtrar acentos,
+  idioma, termos e até seis resultados, validar estados, links seguros e teclado.
 
 As comparações usam os próprios cards renderizados, sem fixar título, data, URL
 ou frases de uma publicação. Um blog sem posts é válido se mostrar o estado
@@ -105,8 +114,9 @@ Ela copia o código-fonte para `$TMPDIR`, adiciona posts PT/EN correspondentes
 Depois remove somente os posts da cópia, recompila e verifica o estado vazio;
 também corrompe SVG, PNG, WOFF2 e o uso da fonte somente no build temporário,
 insere SVGs ativos/remotos e arquivos privados de nomes distintos para provar
-as barreiras de recursos e publicação. Também executa HTTP/alt/links e testa
-o script de tema.
+as barreiras de recursos e publicação. Corrompe ainda o índice de busca e
+verifica que só `search.json` é permitido na raiz. Também executa HTTP/alt/links
+e testa os scripts de tema e busca.
 Não cria nem altera posts no repositório.
 
 Para provar que a validação de títulos rejeita artefatos quebrados sem tocar

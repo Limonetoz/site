@@ -52,6 +52,11 @@ para português e [`/en/feed.xml`](https://limonetoz.github.io/site/en/feed.xml)
 para inglês. Assine o endereço desejado em um leitor RSS que ofereça alertas;
 o feed publica novos artigos, mas o site não envia notificações push por conta própria.
 
+A busca no cabeçalho pesquisa títulos, resumos e categorias dos posts no idioma
+da página. O Jekyll gera `search.json` no build; o navegador consulta esse índice
+localmente, sem serviço externo. Sem JavaScript, o link Posts permanece disponível.
+Os links Sobre e GitHub do site ficam no rodapé para manter o cabeçalho compacto.
+
 Para incluir um artigo na subcategoria **Off-topic**, use
 `categories: [off-topic]` no cabeçalho. A página
 [`/posts/off-topic/`](https://limonetoz.github.io/site/posts/off-topic/)
@@ -91,7 +96,8 @@ site/
 ├── _data/i18n.yml              # Textos de interface PT/EN
 ├── _includes/                   # Componentes compartilhados
 │   ├── header.html
-│   └── footer.html
+│   ├── footer.html
+│   └── post-categories.html     # Rótulos compartilhados de categorias
 ├── _layouts/                    # Estrutura das páginas
 │   ├── default.html
 │   └── post.html
@@ -104,12 +110,14 @@ site/
 ├── assets/
 │   ├── css/style.css            # Estilos do site
 │   ├── js/theme.js              # Alternância de tema
+│   ├── js/search.js             # Busca local no cabeçalho
 │   ├── images/                  # Mascote e ícones dos perfis
 │   └── fonts/                   # JetBrains Mono WOFF2 e OFL.txt
 ├── tests/
 │   ├── integration/             # Testes HTTP
 │   └── README.md
 ├── _config.yml                  # Configuração do Jekyll
+├── search.json                  # Índice de busca gerado com Liquid
 ├── index.html                   # Página inicial
 ├── README.md
 └── shell.nix                    # Ambiente de desenvolvimento
