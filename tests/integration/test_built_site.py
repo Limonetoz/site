@@ -20,7 +20,8 @@ build_dir = args.build_dir.resolve()
 if not (build_dir / 'index.html').is_file():
     parser.error('Build ausente: execute o Jekyll antes dos testes.')
 public_roots = {'assets', 'posts', 'sobre', 'en'}
-public_documents = {Path('index.html'), Path('feed.xml'), Path('en/feed.xml')}
+public_documents = {Path('index.html'), Path('feed.xml'), Path('en/feed.xml'),
+                    Path('search.json')}
 asset_types = {'css': '.css', 'js': '.js', 'images': {'.svg', '.png'},
                'fonts': '.woff2'}
 for path in build_dir.rglob('*'):

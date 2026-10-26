@@ -16,10 +16,6 @@
         <li><a href="{% unless page.home %}{{ t.home_url | relative_url }}{% endunless %}#posts">{{ t.posts | escape }}</a></li>
         <li><a href="{{ language_prefix | append: '/posts/tutorial/' | relative_url }}">{{ t.tutorial | escape }}</a></li>
         <li><a href="{{ language_prefix | append: '/posts/off-topic/' | relative_url }}">{{ t.off_topic | escape }}</a></li>
-        <li><a href="{{ language_prefix | append: '/sobre/' | relative_url }}">{{ t.about | escape }}</a></li>
-        <li>
-          <a href="https://github.com/Limonetoz/site" target="_blank" rel="noopener noreferrer" aria-label="{{ t.github_repo | escape }}">GitHub</a>
-        </li>
         <li><a href="{{ feed_url | relative_url }}" aria-label="{{ t.rss | escape }}">RSS</a></li>
         {% if alternate_url %}
           <li><a class="language-toggle" href="{{ alternate_url | relative_url }}" hreflang="{{ other_language }}" lang="{{ other_language }}" aria-label="{{ t.switch | escape }}">{{ other_language | upcase }}</a></li>
@@ -31,5 +27,15 @@
           data-theme-activate-light="{{ t.theme_activate_light | escape }}">{{ t.theme | escape }}</button></li>
       </ul>
     </nav>
+    <div class="search" data-search data-index-url="{{ '/search.json' | relative_url | escape }}" data-lang="{{ language | escape }}" hidden>
+      <label class="search-label" for="site-search">{{ t.search_label | escape }}</label>
+      <input id="site-search" class="search-input" type="search" autocomplete="off" data-search-input
+        placeholder="{{ t.search_placeholder | escape }}" aria-describedby="search-status" aria-controls="search-results">
+      <p id="search-status" class="search-status" data-search-status role="status" aria-live="polite"
+        data-empty="{{ t.search_empty | escape }}" data-loading="{{ t.search_loading | escape }}"
+        data-none="{{ t.search_none | escape }}" data-found="{{ t.search_found | escape }}"
+        data-error="{{ t.search_error | escape }}"></p>
+      <ul id="search-results" class="search-results" data-search-results aria-label="{{ t.search_results | escape }}" hidden></ul>
+    </div>
   </div>
 </header>

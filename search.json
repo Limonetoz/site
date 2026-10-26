@@ -1,0 +1,23 @@
+---
+layout: null
+permalink: /search.json
+---
+{%- assign search_posts = site.posts -%}
+[
+{%- for post in search_posts -%}
+  {%- assign post_language = post.lang | default: 'pt' -%}
+  {%- assign translations = site.data.i18n[post_language] -%}
+  {
+    "lang": {{ post_language | jsonify }},
+    "title": {{ post.title | jsonify }},
+    "description": {{ post.description | default: post.excerpt | strip_html | strip_newlines | jsonify }},
+    "categories": [
+      {%- for category in post.categories -%}
+        {%- assign translated_category = translations.categories[category] | default: category -%}
+        {{ translated_category | jsonify }}{% unless forloop.last %},{% endunless %}
+      {%- endfor -%}
+    ],
+    "url": {{ post.url | relative_url | jsonify }}
+  }{% unless forloop.last %},{% endunless %}
+{%- endfor -%}
+]

@@ -1,4 +1,5 @@
 """Build isolated blog fixtures; assert category filtering and empty state at / and /site."""
+import json
 import os
 import re
 import shutil
@@ -167,7 +168,7 @@ def main():
                 continue
             if entry.is_dir():
                 shutil.copytree(entry, source / entry.name)
-            elif entry.suffix in ('.html', '.md', '.xml'):
+            elif entry.suffix in ('.html', '.md', '.xml') or entry.name == 'search.json':
                 shutil.copy2(entry, source / entry.name)
         posts = source / '_posts'
         posts.mkdir(exist_ok=True)
@@ -201,6 +202,22 @@ def main():
         for prefix in ('', '/site'):
             build_and_check(source, root, prefix, populated=True)
         site_build = root / 'site/populated'
+        english_page = site_build / 'en/index.html'
+        english_html = english_page.read_text(encoding='utf-8')
+        without_about, count = re.subn(
+            r'<a\b[^>]*href="/site/en/sobre/"[^>]*>About</a>', '', english_html)
+        require(count == 1, 'Fixture EN precisa de Sobre no rodapé para testar regressão')
+        expect_rejected(site_build, english_page, without_about.encode(),
+                        'Link Sobre localizado ausente do rodapé',
+                        'Remover Sobre do rodapé EN deve falhar')
+        home_page = site_build / 'index.html'
+        home_html = home_page.read_text(encoding='utf-8')
+        search = re.findall(r'<div class="search" data-search\b.*?</div>', home_html, re.S)
+        require(len(search) == 1, 'Fixture precisa de busca única para testar posição')
+        outside = home_html.replace(search[0], '', 1).replace('</header>', search[0] + '</header>', 1)
+        expect_rejected(site_build, home_page, outside.encode(),
+                        'Busca deve ficar dentro de .header-container',
+                        'Busca fora do contêiner do cabeçalho deve falhar')
         icon = site_build / 'assets/images/icon.svg'
         expect_rejected(site_build, icon, b'not-an-svg', 'SVG inválido',
                         'Um ícone servido com HTTP 200 mas inválido deve reprovar o build')
@@ -242,6 +259,17 @@ def main():
         expect_rejected(site_build, site_build / 'credentials.json', b'{"fixture": true}\n',
                         'Arquivo privado no build',
                         'Um arquivo privado não previsto em lista de bloqueio deve reprovar o build')
+        search_index = site_build / 'search.json'
+        entries = json.loads(search_index.read_text(encoding='utf-8'))
+        require(bool(entries), 'Fixture populada precisa ter posts no índice')
+        expect_rejected(site_build, search_index, b'[{invalid json]', 'Índice JSON inválido',
+                        'JSON malformado deve reprovar o teste HTTP')
+        expect_rejected(site_build, search_index, json.dumps(entries[:-1]).encode(),
+                        'Índice não corresponde aos posts publicados',
+                        'Índice sem um post publicado deve ser rejeitado')
+        expect_rejected(site_build, site_build / 'other.json', b'[]',
+                        'Arquivo privado no build',
+                        'A allowlist deve aceitar somente search.json na raiz')
         expect_rejected(site_build, site_build / 'assets/images/unused.svg',
                         b'<svg xmlns="http://www.w3.org/2000/svg"><script/></svg>',
                         'SVG inseguro', 'SVG não vinculado também deve ser validado antes da publicação')

@@ -3,6 +3,7 @@
 import argparse
 import base64
 import binascii
+import json
 import re
 import shutil
 import subprocess
@@ -198,7 +199,8 @@ def check_local_asset(url, content_type, data):
 
 def check_post_navigation(page, page_url, base):
     if not any(urljoin(page_url, link.attrs.get('href', '')) == base + '#posts'
-               for navigation in page.root.find('nav')
+               for header in page.root.find('header')
+               for navigation in header.find('nav', 'navigation')
                for link in navigation.find('a')):
         raise ValueError(f'Navegação para a lista de posts incorreta: {page_url}')
 
@@ -329,8 +331,9 @@ def check_category(base, pages, category, label):
     for url, page in pages.items():
         if not url.startswith(base):
             continue
-        links = [link for nav in page.root.find('nav') for link in nav.find('a')
-                 if link.text().strip().lower() == label.lower()]
+        links = [link for header in page.root.find('header')
+                 for nav in header.find('nav', 'navigation') for link in nav.find('a')
+                  if link.text().strip().lower() == label.lower()]
         if len(links) != 1 or urljoin(url, links[0].attrs.get('href', '')) != archive:
             raise ValueError(f'Navegação {label} fora do baseurl: {url}')
     if archive not in pages:
@@ -363,17 +366,9 @@ def check_category(base, pages, category, label):
         raise ValueError(f'Arquivo {label} não corresponde aos posts categorizados: '
                          f'esperados {sorted(home_targets)}, encontrados {sorted(seen)}')
 
-def check_about(base, pages, language='pt', site_base=None):
+def check_about(base, pages, site_base=None):
     site_base = site_base or base
     about_url = urljoin(base, 'sobre/')
-    label = 'sobre' if language == 'pt' else 'about'
-    for url, page in pages.items():
-        if not url.startswith(base):
-            continue
-        links = [link for nav in page.root.find('nav') for link in nav.find('a')
-                 if link.text().strip().lower() == label]
-        if len(links) != 1 or urljoin(url, links[0].attrs.get('href', '')) != about_url:
-            raise ValueError(f'Navegação Sobre fora do baseurl: {url}')
     if about_url not in pages:
         raise ValueError(f'Página Sobre não renderizada: {about_url}')
 
@@ -700,6 +695,184 @@ def check_theme(base, pages):
         raise ValueError(f'Script do tema falhou: {theme_script}: {result.stderr.strip()}')
 
 
+def check_search(base, pages):
+    index_url = urljoin(base, 'search.json')
+    script_url = urljoin(base, 'assets/js/search.js')
+    prefix = urlsplit(base).path
+    expected = {}
+    for language, home in (('pt', base), ('en', urljoin(base, 'en/'))):
+        for url, (title, _, categories) in home_posts(home, pages).items():
+            description = [meta.attrs.get('content', '').strip()
+                           for meta in pages[url].root.find('meta')
+                           if meta.attrs.get('name') == 'description']
+            if len(description) != 1:
+                raise ValueError(f'Descrição para índice ausente: {url}')
+            expected[urlsplit(url).path] = (language, title, description[0],
+                                             categories.split(' // '))
+    for url, page in pages.items():
+        header = one(page.root, 'header', 'header')
+        container = one(header, 'div', 'header-container')
+        widgets = [node for node in page.root.find() if 'data-search' in node.attrs]
+        if (len(widgets) != 1 or widgets[0].tag != 'div'
+                or 'search' not in widgets[0].attrs.get('class', '').split()
+                or widgets[0] not in container.children):
+            raise ValueError(f'Busca deve ficar dentro de .header-container: {url}')
+        widget = widgets[0]
+        language = 'en' if url.startswith(urljoin(base, 'en/')) else 'pt'
+        if (widget.attrs.get('data-index-url') != urlsplit(index_url).path
+                or widget.attrs.get('data-lang') != language):
+            raise ValueError(f'Configuração da busca incorreta: {url}')
+        controls = {}
+        for marker, tag, identifier in (('data-search-input', 'input', 'site-search'),
+                                         ('data-search-results', 'ul', 'search-results'),
+                                         ('data-search-status', 'p', 'search-status')):
+            matches = [node for node in page.root.find() if marker in node.attrs]
+            if (len(matches) != 1 or matches[0].tag != tag
+                    or matches[0].attrs.get('id') != identifier
+                    or matches[0] not in list(widget.find())):
+                raise ValueError(f'{marker} ausente, duplicado ou fora da busca: {url}')
+            controls[marker] = matches[0]
+        field = controls['data-search-input']
+        results = controls['data-search-results']
+        status = controls['data-search-status']
+        labels = [node for node in widget.find('label')
+                  if node.attrs.get('for') == field.attrs['id']]
+        translations = ({'placeholder': 'Title, summary or category',
+                         'results': 'Search results', 'empty': 'Type to search posts.',
+                         'loading': 'Loading posts…', 'none': 'No posts found.',
+                         'found': 'Results found:',
+                         'error': 'Could not load search. Please try again.'}
+                        if language == 'en' else
+                        {'placeholder': 'Título, resumo ou categoria',
+                         'results': 'Resultados da busca', 'empty': 'Digite para buscar posts.',
+                         'loading': 'Buscando posts…', 'none': 'Nenhum post encontrado.',
+                         'found': 'Resultados encontrados:',
+                         'error': 'Não foi possível carregar a busca. Tente novamente.'})
+        if (len(labels) != 1 or labels[0].text() !=
+                ('Search posts' if language == 'en' else 'Buscar posts')
+                or field.attrs.get('type') != 'search'
+                or field.attrs.get('placeholder') != translations['placeholder']
+                or field.attrs.get('aria-controls') != results.attrs['id']
+                or field.attrs.get('aria-describedby') != status.attrs['id']
+                or results.attrs.get('aria-label') != translations['results']
+                or 'hidden' not in results.attrs
+                or status.attrs.get('role') != 'status'
+                or status.attrs.get('aria-live') != 'polite'
+                or any(status.attrs.get('data-' + key) != translations[key]
+                       for key in ('empty', 'loading', 'none', 'found', 'error'))):
+            raise ValueError(f'Campo de busca ou rótulo acessível incorreto: {url}')
+        if 'hidden' not in widget.attrs:
+            raise ValueError(f'Busca deve iniciar oculta sem JS: {url}')
+        if not any(urljoin(url, link.attrs.get('href', '')) ==
+                   (urljoin(base, 'en/') if language == 'en' else base) + '#posts'
+                   for header in page.root.find('header') for link in header.find('a')):
+            raise ValueError(f'Link para posts sem JS ausente: {url}')
+        scripts = [urljoin(url, node.attrs.get('src', ''))
+                   for node in page.root.find('script') if node.attrs.get('src')]
+        if scripts.count(script_url) != 1:
+            raise ValueError(f'Script da busca ausente ou duplicado: {url}')
+    with urlopen(index_url, timeout=10) as response:
+        if (response.status != 200 or response.url != index_url
+                or response.headers.get_content_type() != 'application/json'):
+            raise ValueError(f'Índice JSON indisponível ou MIME incorreto: {index_url}')
+        try:
+            entries = json.loads(response.read().decode('utf-8'))
+        except (UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise ValueError(f'Índice JSON inválido: {index_url}') from error
+    if not isinstance(entries, list):
+        raise ValueError('Índice da busca não é um array')
+    found = {}
+    for entry in entries:
+        if (not isinstance(entry, dict)
+                or set(entry) != {'lang', 'title', 'description', 'categories', 'url'}
+                or any(not isinstance(entry[key], str) for key in
+                       ('lang', 'title', 'description', 'url'))
+                or not isinstance(entry['categories'], list)
+                or any(not isinstance(category, str) or not category.strip()
+                       for category in entry['categories'])):
+            raise ValueError(f'Entrada do índice inválida: {entry!r}')
+        path = entry['url']
+        if (not path.startswith(prefix) or urlsplit(path).path != path
+                or path not in expected or path in found):
+            raise ValueError(f'URL de busca inválida, duplicada ou não publicada: {path}')
+        found[path] = (entry['lang'], entry['title'], entry['description'],
+                       entry['categories'])
+    if found != expected:
+        raise ValueError(f'Índice não corresponde aos posts publicados: '
+                         f'esperados {expected!r}, encontrados {found!r}')
+    with urlopen(script_url, timeout=10) as response:
+        if (response.status != 200 or response.headers.get_content_type() not in
+                ('application/javascript', 'text/javascript')):
+            raise ValueError(f'Script da busca indisponível: {script_url}')
+        source = response.read().decode('utf-8')
+    result = subprocess.run(['node', str(Path(__file__).with_name('verify_search.js'))],
+                            input=source, text=True, capture_output=True, check=False)
+    if result.returncode:
+        raise ValueError(f'Script da busca falhou: {script_url}: {result.stderr.strip()}')
+
+
+def check_navigation(base, pages):
+    english = urljoin(base, 'en/')
+    repository = 'https://github.com/Limonetoz/site'
+    for url, page in pages.items():
+        language = 'en' if url.startswith(english) else 'pt'
+        home = english if language == 'en' else base
+        about = urljoin(home, 'sobre/')
+        header = one(page.root, 'header', 'header')
+        container = one(header, 'div', 'header-container')
+        primary = one(header, 'nav', 'navigation')
+        footer = one(page.root, 'footer', 'footer')
+        footer_container = one(footer, 'div', 'footer-container')
+        secondary = one(footer, 'nav', 'footer-links')
+        if primary not in container.children or secondary not in footer_container.children:
+            raise ValueError(f'Navegação fora do contêiner esperado: {url}')
+        if (primary.attrs.get('aria-label') !=
+                ('Main navigation' if language == 'en' else 'Navegação principal')
+                or secondary.attrs.get('aria-label') !=
+                ('Secondary links' if language == 'en' else 'Links secundários')):
+            raise ValueError(f'Nomes das navegações não localizados: {url}')
+        primary_links = list(primary.find('a'))
+        secondary_links = list(secondary.find('a'))
+        if any(link.attrs.get('href') == repository or
+               urljoin(url, link.attrs.get('href', '')) == about
+               for link in header.find('a')):
+            raise ValueError(f'Sobre ou GitHub ainda no cabeçalho: {url}')
+        about_links = [link for link in secondary_links
+                       if urljoin(url, link.attrs.get('href', '')) == about]
+        github_links = [link for link in secondary_links
+                        if link.attrs.get('href') == repository]
+        if (len(about_links) != 1 or about_links[0].text() !=
+                ('About' if language == 'en' else 'Sobre')):
+            raise ValueError(f'Link Sobre localizado ausente do rodapé: {url}')
+        if (len(github_links) != 1 or github_links[0].text() != 'GitHub'
+                or github_links[0].attrs.get('aria-label') !=
+                ('Site repository on GitHub (opens in a new tab)' if language == 'en'
+                 else 'Repositório do site no GitHub (abre em nova aba)')
+                or github_links[0].attrs.get('target') != '_blank'
+                or not {'noopener', 'noreferrer'} <=
+                set(github_links[0].attrs.get('rel', '').split())):
+            raise ValueError(f'Link GitHub do rodapé incorreto: {url}')
+        if len([link for link in page.root.find('a')
+                if link.attrs.get('href') == repository]) != 1:
+            raise ValueError(f'Link do repositório ausente ou duplicado: {url}')
+        expected = (('Posts', home + '#posts'),
+                    ('Tutorial', urljoin(home, 'posts/tutorial/')),
+                    ('Off-topic', urljoin(home, 'posts/off-topic/')),
+                    ('RSS', urljoin(base, 'en/feed.xml' if language == 'en' else 'feed.xml')))
+        for label, target in expected:
+            links = [link for link in primary_links
+                     if link.text().strip() == label and
+                     urljoin(url, link.attrs.get('href', '')) == target]
+            if len(links) != 1:
+                raise ValueError(f'Link {label} ausente da navegação principal: {url}')
+        if len([node for node in primary.find('button')
+                if node.attrs.get('id') == 'theme-toggle']) != 1:
+            raise ValueError(f'Alternância de tema fora da navegação principal: {url}')
+        if len([link for link in primary_links if link.text().strip() ==
+                ('PT' if language == 'en' else 'EN')]) != 1:
+            raise ValueError(f'Alternância de idioma fora da navegação principal: {url}')
+
+
 def verify(base):
     base = base.rstrip('/') + '/'
     origin = urlsplit(base)
@@ -744,10 +917,6 @@ def verify(base):
                     raise ValueError('Favicon local ausente ou incorreto')
                 if any('alt' not in image for image in page.images):
                     raise ValueError('Imagem sem atributo alt')
-                github = [link for link in page.links
-                          if link['href'] == 'https://github.com/Limonetoz/site']
-                if not github:
-                    raise ValueError('Link do repositório ausente')
                 for link in page.links:
                     if (link.get('target') == '_blank'
                             and 'noopener' not in link.get('rel', '').split()):
@@ -771,6 +940,7 @@ def verify(base):
     if base in pages and not errors:
         try:
             check_localization(base, pages)
+            check_navigation(base, pages)
             artwork = post_art_by_title(Path(__file__).resolve().parents[2] / '_posts')
             allowed_art_pages = set()
             for locale, language in ((base, 'pt'), (urljoin(base, 'en/'), 'en')):
@@ -780,7 +950,7 @@ def verify(base):
                 allowed_art_pages.update(check_blog(locale, localized, artwork))
                 for category, label in (('off-topic', 'Off-topic'), ('tutorial', 'Tutorial')):
                     check_category(locale, localized, category, label)
-                check_about(locale, localized, language, base)
+                check_about(locale, localized, base)
             art_url = urljoin(base, 'assets/images/icon-agents.svg')
             for url, page in pages.items():
                 if url not in allowed_art_pages and any(
@@ -789,6 +959,7 @@ def verify(base):
             check_feeds(base, pages)
             check_font(base, pages)
             check_theme(base, pages)
+            check_search(base, pages)
         except ValueError as error:
             errors.append(f'{base}: {error}')
     for error in errors:

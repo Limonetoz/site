@@ -7,6 +7,14 @@ pt:
   footer_home: Início
   skip: Pular para o conteúdo
   posts: Posts
+  search_label: Buscar posts
+  search_placeholder: Título, resumo ou categoria
+  search_results: Resultados da busca
+  search_empty: Digite para buscar posts.
+  search_loading: Buscando posts…
+  search_none: Nenhum post encontrado.
+  search_found: "Resultados encontrados:"
+  search_error: Não foi possível carregar a busca. Tente novamente.
   tutorial: Tutorial
   off_topic: Off-topic
   about: Sobre
@@ -59,6 +67,14 @@ en:
   footer_home: Home
   skip: Skip to content
   posts: Posts
+  search_label: Search posts
+  search_placeholder: Title, summary or category
+  search_results: Search results
+  search_empty: Type to search posts.
+  search_loading: Loading posts…
+  search_none: No posts found.
+  search_found: "Results found:"
+  search_error: Could not load search. Please try again.
   tutorial: Tutorial
   off_topic: Off-topic
   about: About
