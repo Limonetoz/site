@@ -1,10 +1,8 @@
 {% assign language = page.lang | default: 'pt' %}
 {% assign t = site.data.i18n[language] %}
-{% assign language_home = '/' %}
-{% if language == 'en' %}{% assign language_home = '/en/' %}{% endif %}
 {% assign category_posts = site.categories[page.category] | where: 'lang', language %}
 <main class="post-page container" id="conteudo">
-  <a class="post-back" href="{{ language_home | relative_url }}#posts">{{ t.back_posts | escape }}</a>
+  <a class="post-back" href="{{ t.home_url | relative_url }}#posts">{{ t.back_posts | escape }}</a>
   <section class="section" aria-labelledby="archive-title">
     <header class="section-heading">
       <div>

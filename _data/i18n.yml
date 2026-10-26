@@ -1,5 +1,6 @@
 pt:
   html_lang: pt-BR
+  home_url: /
   nav_label: Navegação principal
   secondary_nav: Links secundários
   back_home: Voltar ao início
@@ -48,6 +49,7 @@ pt:
     off-topic: off-topic
 en:
   html_lang: en
+  home_url: /en/
   nav_label: Main navigation
   secondary_nav: Secondary links
   back_home: Back to home

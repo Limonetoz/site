@@ -3,10 +3,8 @@ layout: default
 ---
 {% assign language = page.lang | default: 'pt' %}
 {% assign t = site.data.i18n[language] %}
-{% assign language_home = '/' %}
-{% if language == 'en' %}{% assign language_home = '/en/' %}{% endif %}
 <main class="post-page container" id="conteudo">
-  <a class="post-back" href="{{ language_home | relative_url }}#posts">{{ t.back_posts | escape }}</a>
+  <a class="post-back" href="{{ t.home_url | relative_url }}#posts">{{ t.back_posts | escape }}</a>
 
   <article class="post-entry">
     <header class="post-entry-header">

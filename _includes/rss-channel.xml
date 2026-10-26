@@ -1,12 +1,10 @@
 {% assign language = page.lang | default: 'pt' %}
 {% assign t = site.data.i18n[language] %}
-{% assign language_home = '/' %}
-{% if language == 'en' %}{% assign language_home = '/en/' %}{% endif %}
 {% assign localized_posts = site.posts | where: 'lang', language %}
 <rss version="2.0">
   <channel>
     <title>4LagDev // {{ t.posts | xml_escape }}</title>
-    <link>{{ language_home | absolute_url | xml_escape }}</link>
+    <link>{{ t.home_url | absolute_url | xml_escape }}</link>
     <description>{{ t.rss_description | xml_escape }}</description>
     <language>{{ t.html_lang }}</language>
     <lastBuildDate>{{ site.time | date_to_rfc822 }}</lastBuildDate>

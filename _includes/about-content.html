@@ -1,7 +1,5 @@
 {% assign language = page.lang | default: 'pt' %}
 {% assign t = site.data.i18n[language] %}
-{% assign language_home = '/' %}
-{% if language == 'en' %}{% assign language_home = '/en/' %}{% endif %}
 <main class="about-page container" id="conteudo">
   <div class="about-content">
     <span class="section-index">{{ t.about_index | escape }}</span>
@@ -31,6 +29,6 @@
       </a>
     </nav>
 
-    <a class="about-home" href="{{ language_home | relative_url }}">{{ t.about_back | escape }}</a>
+    <a class="about-home" href="{{ t.home_url | relative_url }}">{{ t.about_back | escape }}</a>
   </div>
 </main>

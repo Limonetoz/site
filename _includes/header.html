@@ -1,21 +1,19 @@
 {% assign language = page.lang | default: 'pt' %}
 {% assign t = site.data.i18n[language] %}
 {% assign language_prefix = '' %}
-{% assign language_home = '/' %}
 {% if language == 'en' %}
   {% assign language_prefix = '/en' %}
-  {% assign language_home = '/en/' %}
 {% endif %}
 <header class="header">
   <div class="header-container container">
-    <a class="logo" href="{% if page.home %}#inicio{% else %}{{ language_home | relative_url }}{% endif %}" aria-label="{{ t.back_home | escape }}">
+    <a class="logo" href="{% if page.home %}#inicio{% else %}{{ t.home_url | relative_url }}{% endif %}" aria-label="{{ t.back_home | escape }}">
       <span class="logo-mark" aria-hidden="true"></span>
       <span class="logo-name">Code4lag_</span>
     </a>
 
     <nav class="navigation" aria-label="{{ t.nav_label | escape }}">
       <ul>
-        <li><a href="{% unless page.home %}{{ language_home | relative_url }}{% endunless %}#posts">{{ t.posts | escape }}</a></li>
+        <li><a href="{% unless page.home %}{{ t.home_url | relative_url }}{% endunless %}#posts">{{ t.posts | escape }}</a></li>
         <li><a href="{{ language_prefix | append: '/posts/tutorial/' | relative_url }}">{{ t.tutorial | escape }}</a></li>
         <li><a href="{{ language_prefix | append: '/posts/off-topic/' | relative_url }}">{{ t.off_topic | escape }}</a></li>
         <li><a href="{{ language_prefix | append: '/sobre/' | relative_url }}">{{ t.about | escape }}</a></li>
