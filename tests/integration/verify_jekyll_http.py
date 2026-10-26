@@ -324,63 +324,21 @@ def check_blog(base, pages, artwork):
         raise ValueError(f'Posts ilustrados de {language} ausentes da listagem')
     return art_pages
 
-def check_off_topic(base, pages):
-    archive = urljoin(base, 'posts/off-topic/')
-    home = pages[base]
-    for url, page in pages.items():
-        if not url.startswith(base):
-            continue
-        if not any(urljoin(url, link.attrs.get('href', '')) == archive
-                   and 'off-topic' in link.text().lower()
-                   for nav in page.root.find('nav') for link in nav.find('a')):
-            raise ValueError(f'Navegação Off-topic ausente: {url}')
-    if archive not in pages:
-        raise ValueError(f'Arquivo Off-topic não renderizado: {archive}')
-    main = one(pages[archive].root, 'main')
-    cards = list(main.find('article'))
-    if not cards and not any(node.text() for node in main.find('p', 'posts-empty')):
-        raise ValueError('Arquivo Off-topic sem posts e sem estado vazio visível')
-    home_sections = [section for section in home.root.find('section')
-                     if section.attrs.get('id') == 'posts']
-    if len(home_sections) != 1:
-        raise ValueError('Seção de posts da página inicial ausente')
-    home_targets = {
-        urljoin(base, link.attrs['href'])
-        for card in home_sections[0].find('article')
-        for heading in card.find() if heading.tag in ('h2', 'h3', 'h4')
-        for link in heading.find('a') if link.attrs.get('href')
-        if any(part.strip().lower() == 'off-topic'
-               for part in one(card, 'span', 'post-category').text().split('//'))
-    }
-    seen = set()
-    for card in cards:
-        headings = [node for node in card.find() if node.tag in ('h2', 'h3', 'h4')]
-        if len(headings) != 1:
-            raise ValueError('Card Off-topic sem título único')
-        link = one(headings[0], 'a')
-        target = urljoin(archive, link.attrs.get('href', ''))
-        if target not in home_targets or target in seen or target not in pages:
-            raise ValueError(f'Post Off-topic inválido ou repetido: {target}')
-        seen.add(target)
-    if seen != home_targets:
-        raise ValueError(f'Arquivo Off-topic não corresponde aos posts categorizados: '
-                         f'esperados {sorted(home_targets)}, encontrados {sorted(seen)}')
-
-def check_tutorial(base, pages):
-    archive = urljoin(base, 'posts/tutorial/')
+def check_category(base, pages, category, label):
+    archive = urljoin(base, f'posts/{category}/')
     for url, page in pages.items():
         if not url.startswith(base):
             continue
         links = [link for nav in page.root.find('nav') for link in nav.find('a')
-                 if link.text().strip().lower() == 'tutorial']
+                 if link.text().strip().lower() == label.lower()]
         if len(links) != 1 or urljoin(url, links[0].attrs.get('href', '')) != archive:
-            raise ValueError(f'Navegação Tutorial fora do baseurl: {url}')
+            raise ValueError(f'Navegação {label} fora do baseurl: {url}')
     if archive not in pages:
-        raise ValueError(f'Arquivo Tutorial não renderizado: {archive}')
+        raise ValueError(f'Arquivo {label} não renderizado: {archive}')
     main = one(pages[archive].root, 'main')
     cards = list(main.find('article'))
     if not cards and not any(node.text() for node in main.find('p', 'posts-empty')):
-        raise ValueError('Arquivo Tutorial sem posts e sem estado vazio visível')
+        raise ValueError(f'Arquivo {label} sem posts e sem estado vazio visível')
     home_posts = [section for section in pages[base].root.find('section')
                   if section.attrs.get('id') == 'posts']
     if len(home_posts) != 1:
@@ -388,7 +346,7 @@ def check_tutorial(base, pages):
     home_targets = {
         urljoin(base, one(heading, 'a').attrs['href'])
         for card in home_posts[0].find('article')
-        if any(part.strip().lower() == 'tutorial'
+        if any(part.strip().lower() == category
                for part in one(card, 'span', 'post-category').text().split('//'))
         for heading in card.find() if heading.tag in ('h2', 'h3', 'h4')
     }
@@ -396,13 +354,13 @@ def check_tutorial(base, pages):
     for card in cards:
         headings = [node for node in card.find() if node.tag in ('h2', 'h3', 'h4')]
         if len(headings) != 1:
-            raise ValueError('Card Tutorial sem título único')
+            raise ValueError(f'Card {label} sem título único')
         target = urljoin(archive, one(headings[0], 'a').attrs.get('href', ''))
         if target not in home_targets or target in seen or target not in pages:
-            raise ValueError(f'Post Tutorial inválido ou repetido: {target}')
+            raise ValueError(f'Post {label} inválido ou repetido: {target}')
         seen.add(target)
     if seen != home_targets:
-        raise ValueError(f'Arquivo Tutorial não corresponde aos posts categorizados: '
+        raise ValueError(f'Arquivo {label} não corresponde aos posts categorizados: '
                          f'esperados {sorted(home_targets)}, encontrados {sorted(seen)}')
 
 def check_about(base, pages, language='pt', site_base=None):
@@ -820,8 +778,8 @@ def verify(base):
                              if url.startswith(locale)
                              and (language == 'en' or not url.startswith(urljoin(base, 'en/')))}
                 allowed_art_pages.update(check_blog(locale, localized, artwork))
-                check_off_topic(locale, localized)
-                check_tutorial(locale, localized)
+                for category, label in (('off-topic', 'Off-topic'), ('tutorial', 'Tutorial')):
+                    check_category(locale, localized, category, label)
                 check_about(locale, localized, language, base)
             art_url = urljoin(base, 'assets/images/icon-agents.svg')
             for url, page in pages.items():
