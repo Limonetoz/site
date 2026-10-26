@@ -3,6 +3,7 @@ pt:
   nav_label: Navegação principal
   secondary_nav: Links secundários
   back_home: Voltar ao início
+  footer_home: Início
   skip: Pular para o conteúdo
   posts: Posts
   tutorial: Tutorial
@@ -50,6 +51,7 @@ en:
   nav_label: Main navigation
   secondary_nav: Secondary links
   back_home: Back to home
+  footer_home: Home
   skip: Skip to content
   posts: Posts
   tutorial: Tutorial
