@@ -100,7 +100,7 @@ nix-shell --run 'python3 tests/integration/test_off_topic_fixture.py'
 ```
 
 Ela copia o código-fonte para `$TMPDIR`, adiciona posts PT/EN correspondentes
-`off-topic`, `tutorial` e `estudos` com datas passadas, compila e testa tanto
+`off-topic`, dois `tutorial` e `estudos` com datas passadas, compila e testa tanto
 `/` quanto `/site/`, inclusive arquivos e feeds de cada idioma.
 Depois remove somente os posts da cópia, recompila e verifica o estado vazio;
 também corrompe SVG, PNG, WOFF2 e o uso da fonte somente no build temporário,
