@@ -14,7 +14,7 @@
 
 Um histórico do que ando trabalhando: estudos, tecnologia e projetos.
 Um blog estático feito com **Jekyll**, **Markdown**, **HTML/Liquid** e **CSS**,
-com JavaScript leve apenas para alternar entre tema claro e escuro.
+com JavaScript leve para alternar o tema e buscar posts no próprio navegador.
 
 **[Explorar posts →](https://limonetoz.github.io/site/#posts)**
 

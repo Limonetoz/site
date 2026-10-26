@@ -46,8 +46,10 @@
   com IDs, atributos e rótulos acessíveis localizados, inicialmente oculta sem JS e
   com link para posts disponível; `/search.json` por HTTP/MIME corresponde
   exatamente aos posts publicados, suas descrições, categorias localizadas e
-  URLs com prefixo; `search.js` é executado em Node VM para filtrar acentos,
-  idioma, termos e até seis resultados, validar estados, links seguros e teclado.
+  URLs com prefixo; `search.js` e o índice compartilham a versão de cache do CSS.
+  A busca é executada em Node VM para filtrar acentos, idioma, termos e até seis
+  resultados em `/` e `/site`, além de validar índice vazio, retry, concorrência,
+  links seguros e teclado.
 
 As comparações usam os próprios cards renderizados, sem fixar título, data, URL
 ou frases de uma publicação. Um blog sem posts é válido se mostrar o estado
@@ -70,7 +72,8 @@ nix-shell --run 'python3 tests/integration/verify_jekyll_http.py http://127.0.0.
 O script retorna código 0 quando todas as verificações passam e 1 quando alguma falha. O servidor precisa estar em execução.
 
 A pasta `tests/` é excluída do site publicado por `_config.yml`.
-O ambiente Nix fornece Pillow para decodificar PNG e WOFF2. Fora do Nix,
+O ambiente Nix fornece Pillow para decodificar PNG e WOFF2 e PyYAML para
+interpretar o front matter dos posts. Fora do Nix,
 instale as dependências com `python3 -m pip install -r tests/requirements.txt`.
 
 ## GitHub Actions
